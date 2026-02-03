@@ -14,9 +14,17 @@ export async function login(req: Request, res: Response) {
 }
 
 
+
 export async function me(req: Request, res: Response) {
   const userId = req.user!.userId
 
   const user = await AuthService.getCurrentUser(userId)
+
+  if (!user) {
+    return res.status(404).json({
+      message: 'User not found (expected until Supabase access is ready)',
+    })
+  }
+
   res.json(user)
 }

@@ -38,7 +38,6 @@ export async function loginUser(email: string, password: string) {
     },
   }
 }
-
 export async function getCurrentUser(userId: string) {
   const { data: user, error } = await supabase
     .from('users')
@@ -53,7 +52,8 @@ export async function getCurrentUser(userId: string) {
     .single()
 
   if (error || !user) {
-    throw new Error('User not found')
+    // This is expected in devAuth mode
+    return null
   }
 
   const { count } = await supabase

@@ -1,11 +1,9 @@
-import { Router } from "express";
-import { fetchCourses } from "../controllers/courses.controller";
-import { devAuth } from '../middlewares/devAuth.middleware'
+import { Router } from 'express'
+import * as CoursesController from '../controllers/courses.controller'
 
+const router = Router()
 
-const router = Router();
+router.get('/', CoursesController.getCourses)
+router.get('/:id', CoursesController.getCourse)
 
-router.get('/', devAuth, fetchCourses)
-
-
-export default router;
+export default router

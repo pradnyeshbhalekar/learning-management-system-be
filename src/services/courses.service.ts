@@ -1,37 +1,22 @@
-import { supabase } from "../lib/supabase";
-import { Course } from "../models/course.model";
+import { supabase } from '../lib/supabase'
 
-export async function getAllCourses(
-  category?: string
-): Promise<Course[]> {
-  let query = supabase
-    .from("courses")
-    .select("*")
-    .eq("is_published", true);
+export async function getAllCourses() {
+  const { data, error } = await supabase
+    .from('courses')
+    .select('*')
+    .order('created_at', { ascending: false })
 
-  if (category) {
-    query = query.eq("category", category);
-  }
+  if (error) throw new Error(error.message)
+  return data
+}
 
-  const { data, error } = await query.order("created_at", {
-    ascending: false
-  });
+export async function getCourseById(courseId: string) {
+  const { data, error } = await supabase
+    .from('courses')
+    .select('*')
+    .eq('id', courseId)
+    .single()
 
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return (data ?? []).map((row) => ({
-    id: row.id,
-    title: row.title,
-    description: row.description,
-    category: row.category,
-    level: row.level,
-    instructorId: row.instructor_id,
-    thumbnailUrl: row.thumbnail_url,
-    rating: row.rating,
-    totalStudents: row.total_students,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at
-  }));
+  if (error) throw new Error('Course not found')
+  return data
 }

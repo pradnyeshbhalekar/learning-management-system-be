@@ -1,18 +1,12 @@
-import { Request, Response } from "express";
-import { getAllCourses } from "../services/courses.service";
+import { Request, Response } from 'express'
+import * as CoursesService from '../services/courses.service'
 
-export async function fetchCourses(
-  req: Request,
-  res: Response
-) {
-  try {
-    const category = req.query.category as string | undefined;
+export async function getCourses(_req: Request, res: Response) {
+  const courses = await CoursesService.getAllCourses()
+  res.json(courses)
+}
 
-    const courses = await getAllCourses(category);
-
-    res.json(courses);
-  } catch (error) {
-    console.error("Fetch courses error:", error);
-    res.status(500).json({ error: "Failed to fetch courses" });
-  }
+export async function getCourse(req: Request, res: Response) {
+  const course = await CoursesService.getCourseById(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id)
+  res.json(course)
 }
