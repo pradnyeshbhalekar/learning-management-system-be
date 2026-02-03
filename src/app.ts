@@ -8,6 +8,8 @@ import enrollmentsRoutes from "./routes/enrollments.routes";
 import quizRoutes from "./routes/quiz.routes";
 import devRouter from "./routes/dev.routes"
 import labsRoutes from './routes/labs.routes'
+import categoriesRoutes from './routes/categories.routes'
+
 
 
 const app = express();
@@ -32,7 +34,8 @@ app.use("/api/courses", coursesRoutes);
 app.use("/api/lessons", lessonsRoutes);
 app.use("/api/enrollments", enrollmentsRoutes);
 app.use("/api/quiz", quizRoutes);
-app.use("/",devRouter)
 app.use('/api/labs', labsRoutes)
+app.use("/",devRouter)
+app.use('/api/categories', categoriesRoutes)
 
 export default app;
