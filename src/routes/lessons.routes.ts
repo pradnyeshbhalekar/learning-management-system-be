@@ -1,12 +1,16 @@
-import { Router } from "express";
+import { Router } from 'express'
+import { devAuth } from '../middlewares/devAuth.middleware'
 import {
+  getLessonsForCourse,
+  completeLesson,
+} from '../controllers/lessons.controller'
 
-  markLessonComplete
-} from "../controllers/lessons.controller";
-import { requireAuth } from "../middlewares/auth.middleware";
+const router = Router()
 
-const router = Router();
 
-router.post("/:lessonId/complete", requireAuth, markLessonComplete);
+router.get('/course/:id', getLessonsForCourse)
 
-export default router;
+
+router.post('/:id/complete', devAuth, completeLesson)
+
+export default router

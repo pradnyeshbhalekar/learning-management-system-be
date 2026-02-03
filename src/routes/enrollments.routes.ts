@@ -1,9 +1,13 @@
-import { Router } from "express";
-import { requireAuth } from "../middlewares/auth.middleware";
-import { enrollInCourse } from "../controllers/enrollments.controller";
+import { Router } from 'express'
+import {
+  enroll,
+  getMyEnrollments,
+} from '../controllers/enrollments.controller'
+import { devAuth } from '../middlewares/devAuth.middleware'
 
-const router = Router();
+const router = Router()
 
-router.post("/", requireAuth, enrollInCourse);
+router.post('/', devAuth, enroll)
+router.get('/me', devAuth, getMyEnrollments)
 
-export default router;
+export default router

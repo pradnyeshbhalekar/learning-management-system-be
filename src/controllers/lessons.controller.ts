@@ -1,41 +1,31 @@
-import { Response } from "express";
-import { AuthRequest } from "../middlewares/auth.middleware";
-import { supabase } from "../lib/supabase";
+import { Request, Response } from 'express'
+import * as LessonsService from '../services/lessons.service'
 
-export async function markLessonComplete(
-  req: AuthRequest,
+
+export async function getLessonsForCourse(
+  req: Request,
   res: Response
 ) {
-  try {
-    const rawLessonId = req.params.lessonId;
-    const userId = req.user?.id;
+  const courseId = String(req.params.id)
 
-    if (!userId) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
+  const lessons = await LessonsService.getLessonsByCourse(courseId)
+  res.json(lessons)
+}
 
-    if (!rawLessonId) {
-      return res.status(400).json({ error: "lessonId is required" });
-    }
 
-    const lessonId = Array.isArray(rawLessonId)
-      ? rawLessonId[0]
-      : rawLessonId;
+export async function completeLesson(
+  req: Request,
+  res: Response
+) {
+  const userId = req.user!.userId
+  const lessonId = String(req.params.id)
 
-    const { error } = await supabase
-      .from("lesson_completions")
-      .insert({
-        user_id: userId,
-        lesson_id: lessonId,
-      });
+  await LessonsService.markLessonComplete({
+    user_id: userId,
+    lesson_id: lessonId,
+  })
 
-    if (error && error.code !== "23505") {
-      return res.status(400).json({ error: error.message });
-    }
-
-    return res.json({ success: true });
-  } catch (err) {
-    console.error("Lesson completion error:", err);
-    return res.status(500).json({ error: "Internal server error" });
-  }
+  res.status(201).json({
+    message: 'Lesson marked as complete',
+  })
 }

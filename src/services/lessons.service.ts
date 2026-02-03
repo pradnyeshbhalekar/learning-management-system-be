@@ -1,36 +1,35 @@
-import { supabase } from "../lib/supabase";
-import { Lesson } from "../models/lesson.model";
+import { supabase } from '../lib/supabase'
+import { Lesson } from '../models/lesson.model'
+import {
+  CreateLessonCompletionDTO,
+} from '../models/lessonCompletion.model'
 
-export async function getLessonsByCourse(courseId: string) {
+
+export async function getLessonsByCourse(
+  courseId: string
+): Promise<Lesson[]> {
   const { data, error } = await supabase
-    .from("labs")
-    .select("*")
-    .eq("course_id", courseId)
-    .eq("is_published", true)
-    .order("order_index", { ascending: true });
+    .from('lessons')
+    .select('*')
+    .eq('course_id', courseId)
+    .order('order_index')
 
   if (error) {
-    console.error("Supabase lessons error:", error);
-    throw error;
+    throw new Error(error.message)
   }
 
-  return data ?? [];
+  return data as Lesson[]
 }
 
-export async function completeLesson(
-  userId: string,
-  lessonId: string
+
+export async function markLessonComplete(
+  payload: CreateLessonCompletionDTO
 ): Promise<void> {
   const { error } = await supabase
-    .from("lesson_completions")
-    .insert({
-      user_id: userId,
-      lesson_id: lessonId
-    });
+    .from('lesson_completions')
+    .insert(payload)
 
-  if (error && error.code !== "23505") {
-    // 23505 = unique violation (already completed)
-    throw new Error(error.message);
+  if (error) {
+    throw new Error(error.message)
   }
 }
-

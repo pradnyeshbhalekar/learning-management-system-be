@@ -7,7 +7,7 @@ export function devAuth(
 ) {
   // Hardcoded dev user
   req.user = {
-    userId: 'dev-user-123',
+    userId: '00000000-0000-0000-0000-000000000001',
     role: 'admin',
   }
 
