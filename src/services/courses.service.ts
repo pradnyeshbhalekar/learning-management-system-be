@@ -68,3 +68,28 @@ export async function deleteCourse(courseId: string): Promise<void> {
     throw new Error(error.message)
   }
 }
+
+export async function createCourse(input: {
+  title: string
+  description?: string
+  category_id?: string | null
+  instructor_id: string
+}) {
+  const { data, error } = await supabaseAdmin
+    .from('courses')
+    .insert({
+      title: input.title,
+      description: input.description,
+      category_id: input.category_id ?? null,
+      instructor_id: input.instructor_id,
+      is_published: true,
+    })
+    .select()
+    .single()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return data
+}

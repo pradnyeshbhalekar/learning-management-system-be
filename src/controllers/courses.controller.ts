@@ -30,3 +30,25 @@ export async function deleteCourse(
   await CoursesService.deleteCourse(courseId)
   res.json({ success: true })
 }
+
+
+export async function createCourse(
+  req: Request,
+  res: Response
+) {
+  const userId = req.user!.userId
+  const { title, description, category_id } = req.body
+
+  if (!title) {
+    return res.status(400).json({ error: 'Title is required' })
+  }
+
+  const course = await CoursesService.createCourse({
+    title,
+    description,
+    category_id,
+    instructor_id: userId,
+  })
+
+  res.status(201).json(course)
+}
