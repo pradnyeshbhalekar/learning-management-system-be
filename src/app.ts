@@ -5,10 +5,13 @@ import authRoutes from "./routes/auth.routes";
 import coursesRoutes from "./routes/courses.routes";
 import lessonsRoutes from "./routes/lessons.routes";
 import enrollmentsRoutes from "./routes/enrollments.routes";
-import quizRoutes from "./routes/quiz.routes";
+import userQuizRoutes from "./routes/quiz.user.routes";
+import  adminQuizRoutes from "./routes/quiz.admin.routes";
 import devRouter from "./routes/dev.routes"
 import labsRoutes from './routes/labs.routes'
 import categoriesRoutes from './routes/categories.routes'
+
+
 
 
 
@@ -33,9 +36,13 @@ app.use('/api/auth', authRoutes)
 app.use("/api/courses", coursesRoutes);
 app.use("/api/lessons", lessonsRoutes);
 app.use("/api/enrollments", enrollmentsRoutes);
-app.use("/api/quiz", quizRoutes);
+
 app.use('/api/labs', labsRoutes)
 app.use("/",devRouter)
 app.use('/api/categories', categoriesRoutes)
+app.use('/api/quiz', userQuizRoutes)
+app.use('/api/admin/quiz', adminQuizRoutes)
+
+
 
 export default app;
