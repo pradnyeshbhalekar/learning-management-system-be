@@ -1,9 +1,10 @@
 import { Router } from 'express'
-import { devAuth } from '../middlewares/devAuth.middleware'
 import {
   getLessonsForCourse,
   completeLesson,
 } from '../controllers/lessons.controller'
+import { requireAuth } from '../middlewares/auth.middleware'
+
 
 const router = Router()
 
@@ -11,6 +12,5 @@ const router = Router()
 router.get('/course/:id', getLessonsForCourse)
 
 
-router.post('/:id/complete', devAuth, completeLesson)
-
+router.post('/:id/complete', requireAuth, completeLesson)
 export default router

@@ -4,14 +4,14 @@ import {
   createCategory, updateCategory,deleteCategory
 } from '../controllers/categories.controller'
 import { devAuth } from '../middlewares/devAuth.middleware'
-import { requireAdmin } from '../middlewares/auth.middleware'
+import { requireAuth, requireAdmin } from '../middlewares/auth.middleware'
 
 const router = Router()
 
 
 router.get('/', getCategories)
-router.post('/', devAuth, requireAdmin, createCategory)
-router.put('/:id', devAuth, requireAdmin, updateCategory)
-router.delete('/:id', devAuth, requireAdmin, deleteCategory)
+router.post('/', requireAuth, requireAdmin, createCategory)
+router.put('/:id', requireAuth, requireAdmin, updateCategory)
+router.delete('/:id', requireAuth, requireAdmin, deleteCategory)
 
 export default router

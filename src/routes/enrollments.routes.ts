@@ -3,11 +3,11 @@ import {
   enroll,
   getMyEnrollments,
 } from '../controllers/enrollments.controller'
-import { devAuth } from '../middlewares/devAuth.middleware'
+import { requireAuth } from '../middlewares/auth.middleware'
 
 const router = Router()
 
-router.post('/', devAuth, enroll)
-router.get('/me', devAuth, getMyEnrollments)
+router.post('/', requireAuth, enroll)
+router.get('/me', requireAuth, getMyEnrollments)
 
 export default router
