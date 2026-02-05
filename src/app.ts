@@ -38,7 +38,7 @@ app.use("/api/lessons", lessonsRoutes);
 app.use("/api/enrollments", enrollmentsRoutes);
 
 app.use('/api/labs', labsRoutes)
-app.use("/",devRouter)
+app.use("/api/dev",devRouter)
 app.use('/api/categories', categoriesRoutes)
 app.use('/api/quiz', userQuizRoutes)
 app.use('/api/admin/quiz', adminQuizRoutes)

@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { devAuth } from '../middlewares/devAuth.middleware'
+import { requireAuth } from '../middlewares/auth.middleware'
 import {
   getQuizByTopic,
   submitQuiz,
@@ -9,12 +9,10 @@ import {
 const router = Router()
 
 
-router.get('/topic/:topicId', devAuth, getQuizByTopic)
+router.get('/topic/:topicId', getQuizByTopic)
 
 
-router.post('/submit', devAuth, submitQuiz)
-
-
-router.get('/my-attempts', devAuth, getMyQuizAttempts)
+router.post('/submit', requireAuth, submitQuiz)
+router.get('/my-attempts', requireAuth, getMyQuizAttempts)
 
 export default router

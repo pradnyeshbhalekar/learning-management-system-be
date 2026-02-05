@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { devAuth } from '../middlewares/devAuth.middleware'
-import { requireAdmin } from '../middlewares/auth.middleware'
+import { requireAdmin,requireAuth } from '../middlewares/auth.middleware'
 import {
   createQuestion,
   updateQuestion,
@@ -11,15 +11,10 @@ import {
 const router = Router()
 
 
-router.get('/', devAuth, requireAdmin, getQuestions)
+router.use(requireAuth, requireAdmin)
 
-
-router.post('/', devAuth, requireAdmin, createQuestion)
-
-
-router.put('/:id', devAuth, requireAdmin, updateQuestion)
-
-
-router.delete('/:id', devAuth, requireAdmin, deleteQuestion)
-
+router.get('/', getQuestions)
+router.post('/', createQuestion)
+router.put('/:id', updateQuestion)
+router.delete('/:id', deleteQuestion)
 export default router
