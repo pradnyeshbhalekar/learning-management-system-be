@@ -241,7 +241,6 @@ DELETE /api/admin/quiz/:id
 Authorization: Bearer <ADMIN_TOKEN>
 
 
-
 ## Video
 
 Stream video (Public)  
