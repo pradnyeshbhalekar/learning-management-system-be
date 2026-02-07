@@ -10,6 +10,7 @@ import  adminQuizRoutes from "./routes/quiz.admin.routes";
 import devRouter from "./routes/dev.routes"
 import labsRoutes from './routes/labs.routes'
 import categoriesRoutes from './routes/categories.routes'
+import videoRoutes from './routes/video.routes'
 
 
 
@@ -36,12 +37,12 @@ app.use('/api/auth', authRoutes)
 app.use("/api/courses", coursesRoutes);
 app.use("/api/lessons", lessonsRoutes);
 app.use("/api/enrollments", enrollmentsRoutes);
-
 app.use('/api/labs', labsRoutes)
 app.use("/api/dev",devRouter)
 app.use('/api/categories', categoriesRoutes)
 app.use('/api/quiz', userQuizRoutes)
 app.use('/api/admin/quiz', adminQuizRoutes)
+app.use('/api/video', videoRoutes)
 
 
 
