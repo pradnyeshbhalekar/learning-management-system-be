@@ -239,3 +239,28 @@ Authorization: Bearer <ADMIN_TOKEN>
 ### Delete quiz question (Admin)
 DELETE /api/admin/quiz/:id  
 Authorization: Bearer <ADMIN_TOKEN>
+
+
+
+## Video
+
+Stream video (Public)  
+GET /api/video?topicId=<topic-uuid>
+
+Stream via direct URL (Public)  
+GET /api/video?url=<public-video-url>
+
+Get signed video URL (Client)  
+GET /api/video/signed-url?topicId=<topic-uuid>  
+Headers: Authorization: Bearer <CLIENT_TOKEN>
+
+Create video (Admin)  
+POST /api/video  
+Headers: Authorization: Bearer <ADMIN_TOKEN>
+
+Body:
+{
+  "title": "Intro Video",
+  "url": "https://<supabase-project>.supabase.co/storage/v1/object/public/videos/topic-videos/file.mp4",
+  "courseId": "<course-uuid>"
+}

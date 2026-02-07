@@ -1,5 +1,5 @@
 import { Request, Response } from 'express'
-import fetch from 'node-fetch'
+import { Readable } from 'node:stream'
 import { supabase } from '../lib/supabase'
 
 interface Topic {
@@ -54,20 +54,39 @@ async function getVideoPath(topicId: string): Promise<string | null> {
 
 export async function streamVideo(req: Request, res: Response) {
   try {
-    const topicId = req.query.topicId as string
+    const topicId = req.query.topicId as string | undefined
     const directUrl = req.query.url as string | undefined
 
-    if (!topicId) {
-      return res.status(400).json({ error: 'Missing topicId' })
+    if (!topicId && !directUrl) {
+      return res.status(400).json({ error: 'topicId or url is required' })
     }
 
-    let videoUrl = directUrl ?? await getVideoPath(topicId)
+    let videoUrl: string | null = null
+
+    // Case 1: direct URL streaming (no DB)
+    if (directUrl) {
+      videoUrl = directUrl
+    }
+
+    // Case 2: topic-based streaming
+    if (!videoUrl && topicId) {
+      videoUrl = await getVideoPath(topicId)
+    }
 
     if (!videoUrl) {
       return res.status(404).json({ error: 'Video not found' })
     }
 
-    // sign storage path if needed
+    // Only validate topic + course if topicId exists
+    if (topicId) {
+      const topic = await getTopic(topicId)
+      if (!topic) return res.status(404).json({ error: 'Topic not found' })
+
+      const course = await getCourse(topic.course_id)
+      if (!course) return res.status(404).json({ error: 'Course not found' })
+    }
+
+    // Sign Supabase storage path if needed
     if (!videoUrl.startsWith('http')) {
       const { data } = await supabase.storage
         .from('videos')
@@ -79,12 +98,6 @@ export async function streamVideo(req: Request, res: Response) {
 
       videoUrl = data.signedUrl
     }
-
-    const topic = await getTopic(topicId)
-    if (!topic) return res.status(404).json({ error: 'Topic not found' })
-
-    const course = await getCourse(topic.course_id)
-    if (!course) return res.status(404).json({ error: 'Course not found' })
 
     const headers: any = {
       'User-Agent': req.headers['user-agent'] || '',
@@ -101,10 +114,17 @@ export async function streamVideo(req: Request, res: Response) {
     }
 
     res.status(upstream.status)
-    res.setHeader('Content-Type', upstream.headers.get('content-type') || 'video/mp4')
+    res.setHeader(
+      'Content-Type',
+      upstream.headers.get('content-type') || 'video/mp4'
+    )
     res.setHeader('Accept-Ranges', 'bytes')
 
-    upstream.body?.pipe(res)
+    if (!upstream.body) {
+  return res.status(500).json({ error: 'No video stream' })
+}
+
+Readable.fromWeb(upstream.body as any).pipe(res)
   } catch (err) {
     console.error('streamVideo error', err)
     if (!res.headersSent) {
@@ -171,7 +191,7 @@ export async function createVideo(req: Request, res: Response) {
       .select()
       .single()
 
-    if (error) {
+    if (error || !topic) {
       return res.status(500).json({ error: 'Failed to create topic' })
     }
 
