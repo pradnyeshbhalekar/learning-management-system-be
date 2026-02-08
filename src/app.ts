@@ -20,7 +20,7 @@ const app = express();
 
 
 app.use(cors({
-  origin: ["http://localhost:3000","https://lms-849i90cjg-siddhantas-techs-projects.vercel.app"],
+  origin: ["http://localhost:3000","https://lms-849i90cjg-siddhantas-techs-projects.vercel.app","https://lms-omgt98xwe-siddhantas-techs-projects.vercel.app"],
   credentials: true
 }));
 
