@@ -1,6 +1,15 @@
 import { supabase } from '../lib/supabase'
 import { supabaseAdmin } from '../lib/supabase'
 
+
+interface UpdateCourseInput {
+  title?: string
+  description?: string
+  category_id?: string
+  is_published?: boolean
+  updated_by?: string
+}
+
 export async function getAllCourses() {
   const { data, error } = await supabase
     .from('courses')
@@ -92,4 +101,23 @@ export async function createCourse(input: {
   }
 
   return data
+}
+
+
+export async function updateCourse(
+  courseId: string,
+  data: UpdateCourseInput
+) {
+  const { data: course, error } = await supabase
+    .from('courses')
+    .update(data)
+    .eq('id', courseId)
+    .select()
+    .single()
+
+  if (error) {
+    throw error
+  }
+
+  return course
 }

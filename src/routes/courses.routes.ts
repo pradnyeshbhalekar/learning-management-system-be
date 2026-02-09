@@ -16,6 +16,7 @@ router.delete('/:id', requireAuth, requireAdmin, CoursesController.deleteCourse)
 router.get('/', CoursesController.getCourses)
 router.get('/:id', CoursesController.getCourse)
 router.get('/:id/details', CoursesController.getCourseDetails)
+router.put('/:id', requireAdmin, CoursesController.updateCourse)
 
 
 

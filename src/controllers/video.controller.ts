@@ -211,3 +211,43 @@ export async function createVideo(req: Request, res: Response) {
     res.status(500).json({ error: 'Internal server error' })
   }
 }
+
+export async function updateVideo(req: Request, res: Response) {
+  const topicId = req.params.id
+  const { title, url } = req.body
+
+  if (!title && !url) {
+    return res.status(400).json({
+      error: 'Nothing to update',
+    })
+  }
+
+  // update topic
+  const { data: topic, error } = await supabase
+    .from('topics')
+    .update({
+      ...(title && { title }),
+      ...(url && { video_url: url }),
+    })
+    .eq('id', topicId)
+    .select()
+    .single()
+
+  if (error || !topic) {
+    return res.status(500).json({ error: 'Failed to update topic' })
+  }
+
+  // optionally update videos table
+  if (url) {
+    let videoPath = url
+    const match = url.match(/storage\/v1\/object\/(?:public|sign)\/[^/]+\/(.+)/)
+    if (match) videoPath = match[1]
+
+    await supabase
+      .from('videos')
+      .update({ video_path: videoPath })
+      .eq('topic_id', topicId)
+  }
+
+  res.json({ data: topic })
+}

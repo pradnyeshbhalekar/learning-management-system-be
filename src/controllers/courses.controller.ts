@@ -52,3 +52,28 @@ export async function createCourse(
 
   res.status(201).json(course)
 }
+export async function updateCourse(
+  req: Request,
+  res: Response
+) {
+  const courseId = String(req.params.id)
+  const userId = req.user!.userId
+
+  const { title, description, category_id, is_published } = req.body
+
+  if (!title && !description && !category_id && is_published === undefined) {
+    return res.status(400).json({
+      error: 'At least one field is required to update',
+    })
+  }
+
+  const updatedCourse = await CoursesService.updateCourse(courseId, {
+    title,
+    description,
+    category_id,
+    is_published,
+    updated_by: userId,
+  })
+
+  res.json(updatedCourse)
+}
