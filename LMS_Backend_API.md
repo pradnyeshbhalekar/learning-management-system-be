@@ -5,8 +5,6 @@
 Local:
 http://localhost:4000
 
-
-
 ---
 
 ## Authentication
@@ -96,18 +94,6 @@ Authorization: Bearer <ADMIN_TOKEN>
 ### Delete course (Admin)
 DELETE /api/courses/:id  
 Authorization: Bearer <ADMIN_TOKEN>
-
----
-
-## Lessons
-
-### Get lessons for a course
-GET /api/lessons/course/:courseId  
-Public
-
-### Mark lesson complete (Client)
-POST /api/lessons/:lessonId/complete  
-Authorization: Bearer <CLIENT_TOKEN>
 
 ---
 
@@ -240,26 +226,37 @@ Authorization: Bearer <ADMIN_TOKEN>
 DELETE /api/admin/quiz/:id  
 Authorization: Bearer <ADMIN_TOKEN>
 
+---
 
 ## Video
 
-Stream video (Public)  
+### Stream video (Public)
 GET /api/video?topicId=<topic-uuid>
 
-Stream via direct URL (Public)  
+### Stream via direct URL (Public)
 GET /api/video?url=<public-video-url>
 
-Get signed video URL (Client)  
+### Get signed video URL (Client)
 GET /api/video/signed-url?topicId=<topic-uuid>  
-Headers: Authorization: Bearer <CLIENT_TOKEN>
+Authorization: Bearer <CLIENT_TOKEN>
 
-Create video (Admin)  
+### Create video (Admin)
 POST /api/video  
-Headers: Authorization: Bearer <ADMIN_TOKEN>
+Authorization: Bearer <ADMIN_TOKEN>
 
 Body:
 {
   "title": "Intro Video",
   "url": "https://<supabase-project>.supabase.co/storage/v1/object/public/videos/topic-videos/file.mp4",
   "courseId": "<course-uuid>"
+}
+
+### Update video (Admin)
+PUT /api/video/:id  
+Authorization: Bearer <ADMIN_TOKEN>
+
+Body:
+{
+  "title": "Updated Video Title",
+  "url": "https://<supabase-project>.supabase.co/storage/v1/object/public/videos/topic-videos/new-file.mp4"
 }
