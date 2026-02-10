@@ -1,15 +1,17 @@
-export type courseLevel = "Beginner" | "Intermediate" | "Advanced";
+// src/models/course.model.ts
 
-export interface Course {
-    id: string;
-    title: string;
-    description: string;
-    category: string;
-    level: courseLevel;
-    instructorId: string | null;
-    thumbnailUrl: string | null;
-    rating: number;
-    totalStudents: number;
-    createdAt: string;
-    updatedAt: string;
+export type CourseLevel = "Beginner" | "Intermediate" | "Advanced";
+
+export interface CourseRow {
+  id: string;
+  title: string;
+  description: string | null;
+  category_id: string | null;
+  level: CourseLevel | null;
+  instructor_id: string | null;
+  thumbnail_url: string | null;
+  rating: number | null;
+  total_students: number | null;
+  created_at: string;
+  updated_at: string;
 }

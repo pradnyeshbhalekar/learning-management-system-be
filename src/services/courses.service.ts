@@ -103,21 +103,16 @@ export async function createCourse(input: {
   return data
 }
 
-
 export async function updateCourse(
   courseId: string,
-  data: UpdateCourseInput
-) {
-  const { data: course, error } = await supabase
-    .from('courses')
-    .update(data)
-    .eq('id', courseId)
-    .select()
-    .single()
-
-  if (error) {
-    throw error
+  updates: {
+    title?: string
+    description?: string
+    category_id?: string
   }
-
-  return course
+) {
+  return supabase
+    .from('courses')
+    .update(updates)
+    .eq('id', courseId)
 }
