@@ -10,6 +10,8 @@ import  adminQuizRoutes from "./routes/quiz.admin.routes";
 import devRouter from "./routes/dev.routes"
 import labsRoutes from './routes/labs.routes'
 import categoriesRoutes from './routes/categories.routes'
+import topicsRoutes from './routes/topics.routes'
+
 import videoRoutes from './routes/video.routes'
 
 
@@ -43,7 +45,7 @@ app.use('/api/categories', categoriesRoutes)
 app.use('/api/quiz', userQuizRoutes)
 app.use('/api/admin/quiz', adminQuizRoutes)
 app.use('/api/video', videoRoutes)
-
+app.use('/api/topics', topicsRoutes)
 
 
 export default app;

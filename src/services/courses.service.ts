@@ -103,16 +103,27 @@ export async function createCourse(input: {
   return data
 }
 
-export async function updateCourse(
-  courseId: string,
-  updates: {
-    title?: string
-    description?: string
-    category_id?: string
+export async function updateCourse(courseId: string, updates: {
+  title?: string
+  description?: string
+  category_id?: string
+}) {
+  if (updates.category_id) {
+    const { data: category } = await supabase
+      .from('categories')
+      .select('id')
+      .eq('id', updates.category_id)
+      .single()
+
+    if (!category) {
+      throw new Error('INVALID_CATEGORY')
+    }
   }
-) {
+
   return supabase
     .from('courses')
     .update(updates)
     .eq('id', courseId)
+    .select()
+    .single()
 }
