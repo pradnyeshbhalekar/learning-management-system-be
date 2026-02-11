@@ -5,26 +5,25 @@ import {
   createLab,
   updateLab,
   deleteLab,
-  getCourseLabs,
+  getLabsForCourse,
   updateCourseLabs,
 } from '../controllers/labs.controller'
-import { devAuth } from '../middlewares/devAuth.middleware'
-import { requireAdmin,requireAuth } from '../middlewares/auth.middleware'
+import { requireAuth, requireAdmin } from '../middlewares/auth.middleware'
 
 const router = Router()
 
+// Labs CRUD
 router.get('/', listLabs)
 router.get('/:id', getLab)
-router.get('/courses/:id/labs', getCourseLabs)
-
 router.post('/', requireAuth, requireAdmin, createLab)
 router.put('/:id', requireAuth, requireAdmin, updateLab)
 router.delete('/:id', requireAuth, requireAdmin, deleteLab)
-router.post('/courses/:id/labs', requireAuth, requireAdmin, updateCourseLabs)
 
+// Course ↔ Labs
+router.get('/courses/:courseId/labs', getLabsForCourse)
 router.post(
-  '/courses/:id/labs',
-
+  '/courses/:courseId/labs',
+  requireAuth,
   requireAdmin,
   updateCourseLabs
 )

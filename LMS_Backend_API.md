@@ -97,44 +97,29 @@ Authorization: Bearer <ADMIN_TOKEN>
 
 ---
 
-## Labs
 
-### List all labs
-GET /api/labs  
-Public
+## Topics
 
-### Get lab by ID
-GET /api/labs/:id  
-Public
-
-### Get labs for a course
-GET /api/labs/courses/:courseId/labs  
-Public
-
-### Create lab (Admin)
-POST /api/labs  
-Authorization: Bearer <ADMIN_TOKEN>
+### Create Topic (Admin)
+POST /api/topics
 
 Body:
 {
-  "name": "Intro Lab",
-  "code": "LAB001",
-  "description": "Hands-on practice"
+  "title": "Introduction",
+  "courseId": "<course-uuid>",
+  "orderIndex": 1
 }
 
-### Update lab (Admin)
-PUT /api/labs/:id  
-Authorization: Bearer <ADMIN_TOKEN>
-
-### Delete lab (Admin)
-DELETE /api/labs/:id  
-Authorization: Bearer <ADMIN_TOKEN>
-
-### Assign labs to course (Admin)
-POST /api/labs/courses/:courseId/labs  
-Authorization: Bearer <ADMIN_TOKEN>
+Response:
+{
+  "id": "<topic-uuid>",
+  "title": "Introduction",
+  "course_id": "<course-uuid>"
+}
 
 ---
+
+
 
 ## Enrollments
 
@@ -228,35 +213,116 @@ Authorization: Bearer <ADMIN_TOKEN>
 
 ---
 
-## Video
+## Videos
 
-### Stream video (Public)
-GET /api/video?topicId=<topic-uuid>
-
-### Stream via direct URL (Public)
-GET /api/video?url=<public-video-url>
-
-### Get signed video URL (Client)
-GET /api/video/signed-url?topicId=<topic-uuid>  
-Authorization: Bearer <CLIENT_TOKEN>
-
-### Create video (Admin)
-POST /api/video  
-Authorization: Bearer <ADMIN_TOKEN>
+### Create Video (Admin)
+POST /api/video
 
 Body:
 {
   "title": "Intro Video",
-  "url": "https://<supabase-project>.supabase.co/storage/v1/object/public/videos/topic-videos/file.mp4",
-  "courseId": "<course-uuid>"
+  "url": "https://<project>.supabase.co/storage/v1/object/public/videos/topic-videos/intro.mp4",
+  "courseId": "<course-uuid>",
+  "topicId": "<topic-uuid>"
 }
 
-### Update video (Admin)
-PUT /api/video/:id  
-Authorization: Bearer <ADMIN_TOKEN>
+Stores:
+- video_path in videos table
+- linked via topic_id
+
+---
+
+### Stream Video (Public)
+GET /api/video?topicId=<topic-uuid>
+
+Supports:
+- Range headers
+- Inline streaming (not download)
+
+---
+
+### Get Signed URL (Client)
+GET /api/video/signed-url?topicId=<topic-uuid>
+
+Headers:
+Authorization: Bearer <CLIENT_TOKEN>
+
+Response:
+{
+  "url": "<signed-url>",
+  "expiresIn": 3600
+}
+
+---
+
+### Update Video (Admin)
+PUT /api/video/:topicId
 
 Body:
 {
-  "title": "Updated Video Title",
-  "url": "https://<supabase-project>.supabase.co/storage/v1/object/public/videos/topic-videos/new-file.mp4"
+  "title": "Updated title",
+  "url": "new-video-url"
 }
+
+---
+
+## Labs
+
+### Get All Labs
+GET /api/labs
+
+Public
+
+---
+
+### Create Lab (Admin)
+POST /api/labs
+
+Body:
+{
+  "name": "React Basics Lab",
+  "code": "LAB001",
+  "description": "Hands-on practice"
+}
+
+---
+
+### Update Lab (Admin)
+PUT /api/labs/:id
+
+---
+
+### Delete Lab (Admin)
+DELETE /api/labs/:id
+
+---
+
+## Course ↔ Labs (course_labs)
+
+### Get Labs for Course
+GET /api/labs/courses/:courseId/labs
+
+Response:
+[
+  {
+    "id": "<lab-uuid>",
+    "name": "React Basics Lab",
+    "code": "LAB001"
+  }
+]
+
+---
+
+### Assign Labs to Course (Admin)
+POST /api/labs/courses/:courseId/labs
+
+Body:
+{
+  "labIds": ["<lab-uuid-1>", "<lab-uuid-2>"]
+}
+
+Behavior:
+- Deletes old assignments
+- Inserts new rows into course_labs
+
+---

@@ -1,4 +1,4 @@
-import { supabaseAdmin } from '../lib/supabase'
+import { supabaseAdmin,supabase} from '../lib/supabase'
 import { Lab } from '../models/lab.model'
 
 export async function getAllLabs(): Promise<Lab[]> {
@@ -63,4 +63,40 @@ export async function deleteLab(id: string): Promise<void> {
     .eq('id', id)
 
   if (error) throw new Error(error.message)
+}
+
+export async function getLabsForCourse(courseId: string) {
+  return supabase
+    .from('course_labs')
+    .select(`
+      labs (
+        id,
+        name,
+        code
+      )
+    `)
+    .eq('course_id', courseId)
+}
+
+export async function assignLabsToCourse(
+  courseId: string,
+  labIds: string[]
+) {
+  // 1. Delete existing
+  await supabase
+    .from('course_labs')
+    .delete()
+    .eq('course_id', courseId)
+
+  // 2. Insert new
+  if (labIds.length === 0) return { data: [] }
+
+  const rows = labIds.map(labId => ({
+    course_id: courseId,
+    lab_id: labId,
+  }))
+
+  return supabase
+    .from('course_labs')
+    .insert(rows)
 }

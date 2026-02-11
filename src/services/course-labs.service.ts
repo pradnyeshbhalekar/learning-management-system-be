@@ -1,102 +1,55 @@
-import { supabase, supabaseAdmin } from '../lib/supabase'
-import { Lab } from '../models/lab.model'
+import { supabase } from '../lib/supabase'
 
-export async function getLabsForCourse(
-  courseId: string
-): Promise<Lab[]> {
-  const { data, error } = await supabase
+/**
+ * Get labs assigned to a course
+ */
+export async function getLabsForCourse(courseId: string) {
+  return supabase
     .from('course_labs')
     .select(`
-      labs (*)
+      labs (
+        id,
+        name,
+        code
+      )
     `)
     .eq('course_id', courseId)
-
-  if (error) {
-    throw new Error(error.message)
-  }
-
-
-  return data.map((row: any) => row.labs)
 }
 
-
-export async function updateCourseLabs(
+/**
+ * Assign labs to a course (replace existing)
+ */
+export async function assignLabsToCourse(
   courseId: string,
   labIds: string[]
-): Promise<void> {
-  const { error: deleteError } = await supabaseAdmin
+) {
+  // 1. Remove existing mappings
+  const { error: deleteError } = await supabase
     .from('course_labs')
     .delete()
     .eq('course_id', courseId)
 
   if (deleteError) {
-    throw new Error(deleteError.message)
+    throw deleteError
   }
 
   // 2. Insert new mappings
-  if (labIds.length > 0) {
-    const rows = labIds.map((labId) => ({
-      course_id: courseId,
-      lab_id: labId,
-    }))
-
-    const { error: insertError } = await supabaseAdmin
-      .from('course_labs')
-      .insert(rows)
-
-    if (insertError) {
-      throw new Error(insertError.message)
-    }
+  if (labIds.length === 0) {
+    return { data: [] }
   }
-}
 
-export async function getAllLabs(): Promise<Lab[]> {
-  const { data, error } = await supabaseAdmin
-    .from('labs')
-    .select('*')
-    .order('name', { ascending: true })
+  const rows = labIds.map(labId => ({
+    course_id: courseId,
+    lab_id: labId,
+  }))
 
-  if (error) throw new Error(error.message)
-  return data as Lab[]
-}
+  const { data, error } = await supabase
+    .from('course_labs')
+    .insert(rows)
 
-export async function getLabById(id: string): Promise<Lab> {
-  const { data, error } = await supabaseAdmin
-    .from('labs')
-    .select('*')
-    .eq('id', id)
-    .single()
+  if (error) {
+    throw error
+  }
 
-  if (error) throw new Error(error.message)
-  return data as Lab
-}
-
-export async function createLab(input: {
-  name: string
-  code: string
-  description?: string
-}): Promise<Lab> {
-  const { data, error } = await supabaseAdmin
-    .from('labs')
-    .insert({
-      name: input.name,
-      code: input.code,
-      description: input.description ?? null,
-    })
-    .select()
-    .single()
-
-  if (error) throw new Error(error.message)
-  return data as Lab
-}
-
-
-
-export async function deleteLab(id: string): Promise<void> {
-  const { error } = await supabaseAdmin
-    .from('labs')
-    .delete()
-    .eq('id', id)
-
-  if (error) throw new Error(error.message)
+  return { data }
 }
