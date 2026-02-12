@@ -12,7 +12,6 @@ interface Topic {
 
 
 
-
 export async function createTopic(req: Request, res: Response) {
   try {
     const { title, courseId, orderIndex } = req.body
@@ -37,7 +36,7 @@ export async function createTopic(req: Request, res: Response) {
       .single()
 
     if (error || !data) {
-      console.error(error)
+      console.error('createTopic error:', error)
       return res.status(500).json({ error: 'Failed to create topic' })
     }
 
@@ -48,7 +47,6 @@ export async function createTopic(req: Request, res: Response) {
   }
 }
 
-// GET /api/topics/course/:courseId
 export async function getTopicsByCourse(req: Request, res: Response) {
   const { courseId } = req.params
 
@@ -58,6 +56,8 @@ export async function getTopicsByCourse(req: Request, res: Response) {
       id,
       title,
       order_index,
+      created_at,
+      updated_at,
       videos (
         id,
         title,
@@ -68,7 +68,91 @@ export async function getTopicsByCourse(req: Request, res: Response) {
     .order('order_index')
 
   if (error) {
+    console.error('getTopicsByCourse error:', error)
     return res.status(500).json({ error: 'Failed to fetch topics' })
+  }
+
+  res.json(data ?? [])
+}
+
+// PUT /api/topics/:id
+export async function updateTopic(req: Request, res: Response) {
+  try {
+    const { id } = req.params
+    const { title, order_index } = req.body
+
+    if (!title && order_index === undefined) {
+      return res.status(400).json({ error: 'Nothing to update' })
+    }
+
+    const { data, error } = await supabase
+      .from('topics')
+      .update({
+        ...(title && { title }),
+        ...(order_index !== undefined && { order_index }),
+      })
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error || !data) {
+      console.error('updateTopic error:', error)
+      return res.status(500).json({ error: 'Failed to update topic' })
+    }
+
+    res.json(data)
+  } catch (err) {
+    console.error('updateTopic crashed', err)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+}
+
+// DELETE /api/topics/:id
+export async function deleteTopic(req: Request, res: Response) {
+  const { id } = req.params
+
+  const { error } = await supabase
+    .from('topics')
+    .delete()
+    .eq('id', id)
+
+  if (error) {
+    console.error('deleteTopic error:', error)
+    return res.status(500).json({ error: 'Failed to delete topic' })
+  }
+
+  res.json({ success: true })
+}
+
+// GET /api/topics/:id
+export async function getTopicById(req: Request, res: Response) {
+  const { id } = req.params
+
+  const { data, error } = await supabase
+    .from('topics')
+    .select(`
+      id,
+      title,
+      course_id,
+      order_index,
+      created_at,
+      updated_at,
+      videos (
+        id,
+        title,
+        video_path
+      ),
+      quiz_questions (
+        id,
+        question_text,
+        question_order
+      )
+    `)
+    .eq('id', id)
+    .single()
+
+  if (error || !data) {
+    return res.status(404).json({ error: 'Topic not found' })
   }
 
   res.json(data)
