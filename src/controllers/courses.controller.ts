@@ -14,10 +14,9 @@ export async function getCourse(req: Request, res: Response) {
   res.json(course)
 }
 
-
-
 export async function getCourseDetails(req: Request, res: Response) {
   const courseId = req.params.id
+
 
   const { data, error } = await supabaseAdmin
     .from('courses')
@@ -32,18 +31,31 @@ export async function getCourseDetails(req: Request, res: Response) {
         title,
         description,
         order_index,
-        created_at
+        videos (
+          id,
+          video_path
+        ),
+        quiz_questions!quiz_questions_topic_id_fkey (
+          id,
+          question_text,
+          question_order,
+          question_type
+        )
       )
     `)
     .eq('id', courseId)
-    .single()
+    .maybeSingle()
 
-  if (error || !data) {
+
+
+  if (!data) {
     return res.status(404).json({ error: 'Course not found' })
   }
 
   res.json(data)
 }
+
+
 
 export async function deleteCourse(
   req: Request,
