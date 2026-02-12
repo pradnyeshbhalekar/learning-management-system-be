@@ -1,5 +1,6 @@
 import { Request, Response } from 'express'
 import { Readable } from 'node:stream'
+import { supabaseAdmin } from '../lib/supabase'
 import { supabase } from '../lib/supabase'
 
 /* ---------------- helpers ---------------- */
@@ -38,47 +39,40 @@ async function getVideoByTopic(topicId: string) {
 /* ---------------- controllers ---------------- */
 
 export async function createVideo(req: Request, res: Response) {
-  try {
-    const { title, url, courseId, topicId } = req.body
+  const { title, url, courseId, topicId } = req.body
 
-    if (!title || !url || !courseId || !topicId) {
-      return res.status(400).json({
-        error: 'title, url, courseId, topicId required',
-      })
-    }
+  if (!title || !url || !courseId || !topicId) {
+    return res.status(400).json({ error: 'Missing fields' })
+  }
 
-    const topic = await getTopic(topicId)
-    if (!topic) return res.status(404).json({ error: 'Topic not found' })
+  const topic = await getTopic(topicId)
+  if (!topic) return res.status(404).json({ error: 'Topic not found' })
+  if (topic.course_id !== courseId) {
+    return res.status(400).json({ error: 'Topic does not belong to course' })
+  }
 
-    if (topic.course_id !== courseId) {
-      return res.status(400).json({ error: 'Topic does not belong to course' })
-    }
+  const match = url.match(/storage\/v1\/object\/(?:public|sign)\/[^/]+\/(.+)/)
+  const videoPath = match ? match[1] : url
 
-    let videoPath = url
-    const match = url.match(/storage\/v1\/object\/(?:public|sign)\/[^/]+\/(.+)/)
-    if (match) videoPath = match[1]
-
-    const { data, error } = await supabase
-      .from('videos')
-      .insert({
+  const { data, error } = await supabaseAdmin
+    .from('videos')
+    .upsert(
+      {
         title,
         topic_id: topicId,
-        course_id: courseId,
         video_path: videoPath,
-      })
-      .select()
-      .single()
+      },
+      { onConflict: 'topic_id' }
+    )
+    .select()
+    .single()
 
-    if (error || !data) {
-      console.error(error)
-      return res.status(500).json({ error: 'Failed to create video' })
-    }
-
-    res.status(201).json(data)
-  } catch (err) {
-    console.error('createVideo crashed', err)
-    res.status(500).json({ error: 'Internal server error' })
+  if (error) {
+    console.error('VIDEO INSERT ERROR:', error)
+    return res.status(500).json({ error: error.message })
   }
+
+  res.status(201).json(data)
 }
 
 export async function streamVideo(req: Request, res: Response) {
