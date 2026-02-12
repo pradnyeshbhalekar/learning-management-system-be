@@ -1,5 +1,8 @@
 import { Request, Response } from 'express'
 import * as CoursesService from '../services/courses.service'
+import { supabase } from '../lib/supabase'
+import { supabaseAdmin } from '../lib/supabase'
+
 
 export async function getCourses(_req: Request, res: Response) {
   const courses = await CoursesService.getAllCourses()
@@ -11,14 +14,35 @@ export async function getCourse(req: Request, res: Response) {
   res.json(course)
 }
 
-export async function getCourseDetails(
-  req: Request,
-  res: Response
-) {
-  const courseId = String(req.params.id)
 
-  const result = await CoursesService.getCourseWithTopics(courseId)
-  res.json(result)
+
+export async function getCourseDetails(req: Request, res: Response) {
+  const courseId = req.params.id
+
+  const { data, error } = await supabaseAdmin
+    .from('courses')
+    .select(`
+      id,
+      title,
+      description,
+      category_id,
+      is_published,
+      topics (
+        id,
+        title,
+        description,
+        order_index,
+        created_at
+      )
+    `)
+    .eq('id', courseId)
+    .single()
+
+  if (error || !data) {
+    return res.status(404).json({ error: 'Course not found' })
+  }
+
+  res.json(data)
 }
 
 export async function deleteCourse(
