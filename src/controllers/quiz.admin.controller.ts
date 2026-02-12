@@ -119,3 +119,58 @@ export async function deleteQuestion(req: Request, res: Response) {
   if (error) return res.status(400).json({ error: error.message })
   res.json({ success: true })
 }
+
+export async function updateQuizQuestion(req: Request, res: Response) {
+  const questionId = req.params.id
+  const {
+    question_text,
+    question_order,
+    options, // <-- important
+  } = req.body
+
+  if (!question_text && !question_order && !Array.isArray(options)) {
+    return res.status(400).json({ error: 'Nothing to update' })
+  }
+
+  // 1. Update question
+  const { data: question, error: questionError } = await supabase
+    .from('quiz_questions')
+    .update({
+      ...(question_text && { question_text }),
+      ...(question_order !== undefined && { question_order }),
+    })
+    .eq('id', questionId)
+    .select()
+    .single()
+
+  if (questionError || !question) {
+    return res.status(500).json({ error: 'Failed to update question' })
+  }
+
+  // 2. Replace options (if provided)
+  if (Array.isArray(options)) {
+    // Delete old options
+    await supabase
+      .from('quiz_options')
+      .delete()
+      .eq('question_id', questionId)
+
+    // Insert new options
+    const rows = options.map((opt, idx) => ({
+      question_id: questionId,
+      option_text: opt.option_text,
+      is_correct: opt.is_correct,
+      option_order: idx,
+    }))
+
+    const { error: optionsError } = await supabase
+      .from('quiz_options')
+      .insert(rows)
+
+    if (optionsError) {
+      return res.status(500).json({ error: 'Failed to update options' })
+    }
+  }
+
+  res.json({ success: true })
+}

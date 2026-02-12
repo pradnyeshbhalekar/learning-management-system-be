@@ -9,7 +9,7 @@ import {
 const router = Router()
 
 
-router.get('/topic/:topicId', getQuizByTopic)
+router.get('/topic/:topicId', requireAuth,getQuizByTopic)
 
 
 router.post('/submit', requireAuth, submitQuiz)
