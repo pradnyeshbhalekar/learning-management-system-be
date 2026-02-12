@@ -2,6 +2,80 @@ import { Request, Response } from 'express'
 import { Readable } from 'node:stream'
 import { supabaseAdmin } from '../lib/supabase'
 import { supabase } from '../lib/supabase'
+import type { Multer } from 'multer'
+
+import crypto from 'node:crypto'
+export async function uploadVideo(req: Request, res: Response) {
+  try {
+    const file = req.file
+    const { topicId, courseId, title } = req.body
+
+    if (!file || !topicId || !courseId) {
+      return res.status(400).json({
+        error: 'file, topicId, courseId required',
+      })
+    }
+
+    // 1. Validate topic belongs to course
+    const { data: topic } = await supabaseAdmin
+      .from('topics')
+      .select('id, course_id')
+      .eq('id', topicId)
+      .single()
+
+    if (!topic) {
+      return res.status(404).json({ error: 'Topic not found' })
+    }
+
+    if (topic.course_id !== courseId) {
+      return res.status(400).json({
+        error: 'Topic does not belong to course',
+      })
+    }
+
+    // 2. Generate storage path
+    const ext = file.originalname.split('.').pop()
+    const videoId = crypto.randomUUID()
+
+    const storagePath = `topic-videos/${topicId}/${videoId}.${ext}`
+
+    // 3. Upload to Supabase Storage
+    const { error: uploadError } = await supabaseAdmin.storage
+      .from('videos')
+      .upload(storagePath, file.buffer, {
+        contentType: file.mimetype,
+        upsert: false,
+      })
+
+    if (uploadError) {
+      console.error(uploadError)
+      return res.status(500).json({ error: 'Upload failed' })
+    }
+
+    // 4. Save DB record
+    const { data: video, error: dbError } = await supabaseAdmin
+      .from('videos')
+      .insert({
+        id: videoId,
+        title: title ?? file.originalname,
+        topic_id: topicId,
+        video_path: storagePath,
+      })
+      .select()
+      .single()
+
+    if (dbError || !video) {
+      console.error(dbError)
+      return res.status(500).json({ error: 'Failed to save video' })
+    }
+
+    // 5. Done
+    res.status(201).json(video)
+  } catch (err) {
+    console.error('uploadVideo crashed', err)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+}
 
 /* ---------------- helpers ---------------- */
 

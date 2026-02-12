@@ -271,6 +271,58 @@ Authorization: Bearer <ADMIN_TOKEN>
 
 ## Videos
 
+
+# Upload Video (Admin)
+
+Uploads a video file for a specific topic.  
+The backend stores the file in Supabase Storage and creates a DB record in `videos`.
+
+---
+
+## Endpoint
+
+**POST** `/api/video/upload`
+
+---
+
+## Auth
+
+**Required**  
+`Authorization: Bearer <ADMIN_TOKEN>`
+
+---
+
+## Content-Type
+
+`multipart/form-data`
+
+---
+
+## Form Fields
+
+| Field     | Type | Required | Description |
+|----------|------|----------|-------------|
+| file     | File | Yes | Video file (`.mp4`, `.mov`, etc.) |
+| topicId  | UUID | Yes | Topic ID the video belongs to |
+| courseId | UUID | Yes | Course ID (must match topic) |
+| title    | Text | No  | Video title (defaults to filename) |
+
+---
+
+## Example (curl)
+
+```bash
+curl -X POST http://localhost:4000/api/video/upload \
+  -H "Authorization: Bearer <ADMIN_TOKEN>" \
+  -F "file=@intro.mp4" \
+  -F "topicId=442f03d6-f13c-4135-a5d3-b45adcf20ef2" \
+  -F "courseId=38ca2086-c979-4f09-b9e0-c54922ac73fc" \
+  -F "title=Intro Video"
+```
+
+---
+
+
 ### Create Video (Admin)
 POST /api/video
 
