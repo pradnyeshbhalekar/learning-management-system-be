@@ -204,8 +204,19 @@ Body:
 }
 
 ### Update quiz question (Admin)
-PUT /api/admin/quiz/:id  
+PUT /api/admin/quiz/:questionId  
 Authorization: Bearer <ADMIN_TOKEN>
+Body:
+{
+  "question_text": "2 + 2 = ?",
+  "question_type": "multiple_choice",
+  "question_order": 1,
+  "is_final_exam": false,
+  "options": [
+    { "option_text": "3", "is_correct": false },
+    { "option_text": "4", "is_correct": true }
+  ]
+}
 
 ### Delete quiz question (Admin)
 DELETE /api/admin/quiz/:id  
