@@ -96,28 +96,73 @@ DELETE /api/courses/:id
 Authorization: Bearer <ADMIN_TOKEN>
 
 ---
+# Topics API
 
+This document describes **only the Topics-related APIs** in the LMS backend.
 
-## Topics
+---
 
-### Create Topic (Admin)
+## Create Topic (Admin)
+
 POST /api/topics
+Authorization: Bearer <ADMIN_TOKEN>
 
-Body:
+Request:
 {
   "title": "Introduction",
-  "courseId": "<course-uuid>",
+  "courseId": "COURSE_UUID",
   "orderIndex": 1
 }
 
-Response:
+Response 201:
 {
-  "id": "<topic-uuid>",
+  "id": "TOPIC_UUID",
   "title": "Introduction",
-  "course_id": "<course-uuid>"
+  "course_id": "COURSE_UUID",
+  "order_index": 1
 }
 
 ---
+
+## Get Topics by Course (Public)
+
+GET /api/topics/course/:courseId
+
+Response:
+[
+  {
+    "id": "TOPIC_UUID",
+    "title": "Introduction",
+    "order_index": 1,
+    "videos": []
+  }
+]
+
+---
+
+## Update Topic (Admin)
+
+PUT /api/topics/:id
+Authorization: Bearer <ADMIN_TOKEN>
+
+Request:
+{
+  "title": "Updated Topic",
+  "order_index": 2
+}
+
+---
+
+## Delete Topic (Admin)
+
+DELETE /api/topics/:id
+Authorization: Bearer <ADMIN_TOKEN>
+
+Response:
+{
+  "success": true
+}
+
 
 
 
