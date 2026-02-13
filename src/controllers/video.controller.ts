@@ -148,7 +148,6 @@ export async function createVideo(req: Request, res: Response) {
 
   res.status(201).json(data)
 }
-
 export async function streamVideo(req: Request, res: Response) {
   try {
     const topicId = req.query.topicId as string | undefined
@@ -197,12 +196,22 @@ export async function streamVideo(req: Request, res: Response) {
     if (req.headers.range) headers.Range = req.headers.range
 
     const upstream = await fetch(videoUrl, { headers })
-    if (!upstream.ok && upstream.status !== 206) {
+
+    if (![200, 206].includes(upstream.status)) {
+      console.error('Upstream fetch failed:', upstream.status)
       return res.status(500).json({ error: 'Failed to fetch video' })
     }
 
     res.status(upstream.status)
-    res.setHeader('Content-Type', 'video/mp4')
+
+    const contentType = upstream.headers.get('content-type')
+    const contentLength = upstream.headers.get('content-length')
+    const contentRange = upstream.headers.get('content-range')
+
+    if (contentType) res.setHeader('Content-Type', contentType)
+    if (contentLength) res.setHeader('Content-Length', contentLength)
+    if (contentRange) res.setHeader('Content-Range', contentRange)
+
     res.setHeader('Accept-Ranges', 'bytes')
 
     Readable.fromWeb(upstream.body as any).pipe(res)
@@ -211,7 +220,6 @@ export async function streamVideo(req: Request, res: Response) {
     res.status(500).json({ error: 'Internal server error' })
   }
 }
-
 export async function updateVideo(req: Request, res: Response) {
   try {
     const videoId = req.params.id
