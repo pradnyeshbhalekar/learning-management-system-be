@@ -148,6 +148,7 @@ export async function createVideo(req: Request, res: Response) {
 
   res.status(201).json(data)
 }
+
 export async function streamVideo(req: Request, res: Response) {
   try {
     const topicId = req.query.topicId as string | undefined
@@ -159,10 +160,12 @@ export async function streamVideo(req: Request, res: Response) {
 
     let videoUrl: string | null = null
 
+    // 1️⃣ Direct URL override (debug / internal use)
     if (directUrl) {
       videoUrl = directUrl
     }
 
+    // 2️⃣ Resolve via topic
     if (topicId) {
       const topic = await getTopic(topicId)
       if (!topic) return res.status(404).json({ error: 'Topic not found' })
@@ -180,6 +183,7 @@ export async function streamVideo(req: Request, res: Response) {
       return res.status(404).json({ error: 'Video not found' })
     }
 
+    // 3️⃣ Convert storage path → signed URL
     if (!videoUrl.startsWith('http')) {
       const { data } = await supabase.storage
         .from('videos')
@@ -192,16 +196,31 @@ export async function streamVideo(req: Request, res: Response) {
       videoUrl = data.signedUrl
     }
 
-    const headers: any = {}
-    if (req.headers.range) headers.Range = req.headers.range
+    // 4️⃣ Forward RANGE header
+    const headers: Record<string, string> = {}
+    if (req.headers.range) {
+      headers.Range = req.headers.range
+    }
 
     const upstream = await fetch(videoUrl, { headers })
 
-    if (![200, 206].includes(upstream.status)) {
+    const isRangeRequest = !!req.headers.range
+
+    if (!upstream.ok) {
       console.error('Upstream fetch failed:', upstream.status)
       return res.status(500).json({ error: 'Failed to fetch video' })
     }
 
+    // 🚨 CRITICAL: Browser expects 206 when Range is used
+    if (isRangeRequest && upstream.status !== 206) {
+      console.error(
+        'Range request expected 206 but got',
+        upstream.status
+      )
+      return res.status(416).end()
+    }
+
+    // 5️⃣ Forward essential headers
     res.status(upstream.status)
 
     const contentType = upstream.headers.get('content-type')
@@ -214,12 +233,18 @@ export async function streamVideo(req: Request, res: Response) {
 
     res.setHeader('Accept-Ranges', 'bytes')
 
+    // 🚨 REQUIRED to avoid Cloudflare / Render buffering hell
+    res.setHeader('Cache-Control', 'no-store')
+
+    // 6️⃣ Stream to client
     Readable.fromWeb(upstream.body as any).pipe(res)
   } catch (err) {
-    console.error('streamVideo error', err)
+    console.error('streamVideo crashed:', err)
     res.status(500).json({ error: 'Internal server error' })
   }
 }
+
+
 export async function updateVideo(req: Request, res: Response) {
   try {
     const videoId = req.params.id
