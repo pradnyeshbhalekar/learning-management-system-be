@@ -480,7 +480,8 @@ Returns aggregated learning statistics for the authenticated user.
   "enrolled": 1,
   "topicsCompleted": 3,
   "coursesCompleted": 1,
-  "watchTimeSeconds": 1315
+  "watchTimeSeconds": 1315,
+  "streak": 1
 }
 ```
 
@@ -510,4 +511,4 @@ Returns aggregated learning statistics for the authenticated user.
 
 ---
 
-_End of document_
+
