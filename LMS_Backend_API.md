@@ -163,6 +163,34 @@ Response:
   "success": true
 }
 
+## Complete a Topic
+
+### Endpoint
+```
+POST /api/topics/:topicId/complete
+```
+
+### Description
+Marks a topic as completed and optionally records watch duration.
+
+### URL Params
+- `topicId` – UUID of the topic
+
+### Request Body
+```json
+{
+  "course_id": "<COURSE_UUID>",
+  "watch_duration_seconds": 420
+}
+```
+
+### Response
+```json
+{
+  "message": "Topic completed"
+}
+```
+
 
 
 
@@ -434,3 +462,52 @@ Behavior:
 - Inserts new rows into course_labs
 
 ---
+
+
+## Dashboard Stats (User)
+
+### Endpoint
+```
+GET /api/dashboard/me
+```
+
+### Description
+Returns aggregated learning statistics for the authenticated user.
+
+### Response
+```json
+{
+  "enrolled": 1,
+  "topicsCompleted": 3,
+  "coursesCompleted": 1,
+  "watchTimeSeconds": 1315
+}
+```
+
+### What Each Field Means
+- `enrolled` → total courses enrolled
+- `topicsCompleted` → total topics completed
+- `coursesCompleted` → courses where `completed_at` is not null
+- `watchTimeSeconds` → sum of `watch_duration_seconds` across all topics
+
+---
+
+## Tables Involved
+
+- `enrollments`
+- `topics`
+- `topic_completions`
+- `users` (mock user via Supabase Auth)
+
+---
+
+## Design Notes
+
+- No counters are stored; all stats are **derived**
+- Enrollment completion is **driven by topic completion**
+- Watch duration is **telemetry**, not a completion gate
+- Clean separation between real auth and analytics auth
+
+---
+
+_End of document_
