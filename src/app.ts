@@ -11,7 +11,7 @@ import devRouter from "./routes/dev.routes"
 import labsRoutes from './routes/labs.routes'
 import categoriesRoutes from './routes/categories.routes'
 import topicsRoutes from './routes/topics.routes'
-
+import dashboardRoutes from './routes/dashboard.routes'
 import videoRoutes from './routes/video.routes'
 
 
@@ -46,6 +46,7 @@ app.use('/api/quiz', userQuizRoutes)
 app.use('/api/admin/quiz', adminQuizRoutes)
 app.use('/api/video', videoRoutes)
 app.use('/api/topics', topicsRoutes)
+app.use('/api/dashboard', dashboardRoutes)
 
 
 export default app;

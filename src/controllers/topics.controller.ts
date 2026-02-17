@@ -1,5 +1,7 @@
 import { Request, Response } from 'express'
 import { supabase, supabaseAdmin } from '../lib/supabase'
+import * as TopicCompletionService from '../services/topics.service'
+
 
 interface Topic {
   id: string
@@ -156,4 +158,29 @@ export async function getTopicById(req: Request, res: Response) {
   }
 
   res.json(data)
+}
+
+
+
+  export async function completeTopic(req: Request, res: Response) {
+  const userId = req.user!.userId
+  const { topicId } = req.params
+  const { course_id, watch_duration_seconds } = req.body
+
+    if (typeof topicId !== 'string') {
+    return res.status(400).json({ error: 'Invalid topicId' })
+  }
+
+  if (!course_id) {
+    return res.status(400).json({ error: 'course_id is required' })
+  }
+
+  await TopicCompletionService.completeTopic(
+    userId,
+    topicId,
+    course_id,
+    watch_duration_seconds ?? 0
+  )
+
+  res.json({ message: 'Topic completed' })
 }

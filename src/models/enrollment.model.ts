@@ -8,6 +8,5 @@ export interface Enrollment {
 }
 
 export interface CreateEnrollmentDTO {
-  user_id: string
   course_id: string
 }
