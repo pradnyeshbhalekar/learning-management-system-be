@@ -13,6 +13,8 @@ import categoriesRoutes from './routes/categories.routes'
 import topicsRoutes from './routes/topics.routes'
 import dashboardRoutes from './routes/dashboard.routes'
 import videoRoutes from './routes/video.routes'
+import AssignmentRoutes from './routes/assignments.routes'
+import adminAssignmentsRoutes from './routes/admin.assignments.routes'
 
 
 
@@ -47,6 +49,7 @@ app.use('/api/admin/quiz', adminQuizRoutes)
 app.use('/api/video', videoRoutes)
 app.use('/api/topics', topicsRoutes)
 app.use('/api/dashboard', dashboardRoutes)
-
+app.use('/api/assignments',AssignmentRoutes)
+app.use('/api/admin/assignments', adminAssignmentsRoutes)
 
 export default app;
