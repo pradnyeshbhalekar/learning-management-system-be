@@ -511,4 +511,149 @@ Returns aggregated learning statistics for the authenticated user.
 
 ---
 
+# Assignments API
 
+This document describes **only the Assignment-related APIs** in the LMS backend.
+
+---
+
+## Create Assignment (Admin)
+
+POST /api/admin/assignments  
+Authorization: Bearer <ADMIN_TOKEN>
+
+Request:
+```json
+{
+  "course_id": "COURSE_UUID",
+  "title": "Final Practical Assignment",
+  "description": "Upload your final project PDF",
+  "max_marks": 100,
+  "passing_marks": 40
+}
+```
+
+Response 201:
+```json
+{
+  "id": "ASSIGNMENT_UUID",
+  "course_id": "COURSE_UUID",
+  "title": "Final Practical Assignment",
+  "description": "Upload your final project PDF",
+  "max_marks": 100,
+  "passing_marks": 40,
+  "created_at": "2026-02-18T10:00:00Z"
+}
+```
+
+---
+
+## Get Assignment by Course (User)
+
+GET /api/assignments/course/:courseId  
+Authorization: Bearer <USER_TOKEN>
+
+Response:
+```json
+{
+  "id": "ASSIGNMENT_UUID",
+  "course_id": "COURSE_UUID",
+  "title": "Final Practical Assignment",
+  "description": "Upload your final project PDF",
+  "max_marks": 100,
+  "passing_marks": 40
+}
+```
+
+---
+
+## Submit Assignment (User)
+
+POST /api/assignments/:assignmentId/submit  
+Authorization: Bearer <USER_TOKEN>  
+Content-Type: multipart/form-data
+
+Form Data:
+```
+file = assignment.pdf
+```
+
+Response 201:
+```json
+{
+  "message": "Assignment submitted successfully"
+}
+```
+
+---
+
+## View Assignment Submissions (Admin)
+
+GET /api/admin/assignments/:assignmentId/submissions  
+Authorization: Bearer <ADMIN_TOKEN>
+
+Response:
+```json
+[
+  {
+    "id": "SUBMISSION_UUID",
+    "user_id": "USER_UUID",
+    "file_url": "https://storage.example.com/assignment.pdf",
+    "submitted_at": "2026-02-18T10:30:00Z",
+    "marks_awarded": null,
+    "status": "submitted"
+  }
+]
+```
+
+---
+
+## Evaluate Assignment Submission (Admin)
+
+POST /api/admin/assignments/submissions/:submissionId/evaluate  
+Authorization: Bearer <ADMIN_TOKEN>
+
+Request:
+```json
+{
+  "marks_awarded": 75
+}
+```
+
+Response:
+```json
+{
+  "message": "Submission evaluated",
+  "status": "evaluated"
+}
+```
+
+---
+
+## Delete Assignment (Admin)
+
+DELETE /api/admin/assignments/:assignmentId  
+Authorization: Bearer <ADMIN_TOKEN>
+
+Response:
+```json
+{
+  "message": "Assignment deleted successfully"
+}
+```
+
+---
+
+## Notes
+
+- Assignments are **course-level**, not topic-level.
+- Users can submit **only once** per assignment.
+- Files are uploaded to Supabase Storage (`assignments` bucket).
+- Assignment is considered **passed** if:
+  ```
+  marks_awarded >= passing_marks
+  ```
+
+---
+
+_End of document_
