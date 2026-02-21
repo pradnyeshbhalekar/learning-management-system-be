@@ -89,7 +89,7 @@ export async function getUserCertificates(req: Request, res: Response) {
 }
 
 export async function getPendingCertificates(req: Request, res: Response) {
-    if (req.user?.role !== 'admin') {
+    if ((req as any).user?.role !== 'admin') {
         return res.status(403).json({ error: 'Admin access required' });
     }
 
@@ -112,7 +112,7 @@ export async function getPendingCertificates(req: Request, res: Response) {
 }
 
 export async function approveCertificate(req: Request, res: Response) {
-    if (req.user?.role !== 'admin') {
+    if ((req as any).user?.role !== 'admin') {
         return res.status(403).json({ error: 'Admin access required' });
     }
 
