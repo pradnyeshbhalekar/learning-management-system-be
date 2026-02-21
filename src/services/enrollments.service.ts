@@ -39,7 +39,7 @@ export async function getUserEnrollments(
 ): Promise<Enrollment[]> {
   const { data, error } = await supabaseAdmin
     .from('enrollments')
-    .select('id, course_id, enrolled_at, completed_at')
+    .select('id, user_id, course_id, enrolled_at, completed_at')
     .eq('user_id', userId)
     .order('enrolled_at', { ascending: false })
 
@@ -47,7 +47,14 @@ export async function getUserEnrollments(
     throw new Error(error.message)
   }
 
-  return data as Enrollment[]
+  return (data || []).map((item: any) => ({
+    id: item.id,
+    userId: item.user_id, // Note: user_id wasn't in original select but model has it
+    courseId: item.course_id,
+    progress: item.progress || 0,
+    enrolledAt: item.enrolled_at,
+    completedAt: item.completed_at
+  })) as Enrollment[]
 }
 
 export async function getEnrollmentCount(userId: string) {
