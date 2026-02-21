@@ -134,6 +134,7 @@ export async function evaluateSubmission(
     .from('assignment_submissions')
     .select(`
       id,
+      user_id,
       assignment_id,
       assignments (
         max_marks,
@@ -147,14 +148,14 @@ export async function evaluateSubmission(
     return res.status(404).json({ error: 'Submission not found' })
   }
 
-  if (marks_awarded > submission.assignments.max_marks) {
+  if (marks_awarded > (submission.assignments as any).max_marks) {
     return res.status(400).json({
       error: 'Marks exceed max marks',
     })
   }
 
   const status =
-    marks_awarded >= submission.assignments.passing_marks
+    marks_awarded >= (submission.assignments as any).passing_marks
       ? 'evaluated'
       : 'rejected'
 
@@ -170,6 +171,23 @@ export async function evaluateSubmission(
   if (error) {
     console.error(error)
     return res.status(500).json({ error: 'Failed to evaluate submission' })
+  }
+
+  // Trigger certificate generation if passed
+  if (status === 'evaluated') {
+    const { generateCertificateInternal } = require('./certificate.controller')
+    // We need courseId from submission
+    const { data: submissionFull } = await supabaseAdmin
+      .from('assignment_submissions')
+      .select(`
+            assignments (course_id)
+        `)
+      .eq('id', submissionId)
+      .single();
+
+    if (submissionFull && submissionFull.assignments) {
+      generateCertificateInternal(submission.user_id, (submissionFull.assignments as any).course_id)
+    }
   }
 
   res.json({

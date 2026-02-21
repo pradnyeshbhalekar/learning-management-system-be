@@ -92,6 +92,10 @@ export async function submitQuiz(req: Request, res: Response) {
         }))
       )
 
+    // Trigger certificate generation
+    const { generateCertificateInternal } = require('./certificate.controller')
+    generateCertificateInternal(userId, courseId)
+
     res.json({ score, passed, scoreId: scoreRow.id })
   } catch (err: any) {
     res.status(500).json({ error: err.message })
