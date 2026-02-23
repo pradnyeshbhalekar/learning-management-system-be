@@ -525,7 +525,7 @@ Authorization: Bearer <ADMIN_TOKEN>
 Request:
 ```json
 {
-  "course_id": "COURSE_UUID",
+  "topic_id": "TOPIC_ID",
   "title": "Final Practical Assignment",
   "description": "Upload your final project PDF",
   "max_marks": 100,
@@ -537,7 +537,7 @@ Response 201:
 ```json
 {
   "id": "ASSIGNMENT_UUID",
-  "course_id": "COURSE_UUID",
+  "topic_id": "TOPIC_ID",
   "title": "Final Practical Assignment",
   "description": "Upload your final project PDF",
   "max_marks": 100,
@@ -557,7 +557,7 @@ Response:
 ```json
 {
   "id": "ASSIGNMENT_UUID",
-  "course_id": "COURSE_UUID",
+  "topic_id": "TOPIC_ID",
   "title": "Final Practical Assignment",
   "description": "Upload your final project PDF",
   "max_marks": 100,

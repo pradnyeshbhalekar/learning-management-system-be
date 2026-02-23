@@ -1,9 +1,8 @@
 import { Router } from 'express'
 import {
   createAssignment,
-  updateAssignment, deleteAssignment
-} from '../controllers/admin.assignments.controller'
-import {
+  updateAssignment,
+  deleteAssignment,
   getSubmissionsByAssignment,
   evaluateSubmission,
 } from '../controllers/admin.assignments.controller'

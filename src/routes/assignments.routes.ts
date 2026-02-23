@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import {
-  getAssignmentByCourse,
+  getAssignmentByTopic,
   submitAssignment,
 } from '../controllers/assignments.controller'
 import { requireAuthForAnalytics } from '../middlewares/auth.middleware'
@@ -8,12 +8,14 @@ import { upload } from '../middlewares/upload.middleware'
 
 const router = Router()
 
+// Get assignment for a topic
 router.get(
-  '/course/:courseId',
+  '/topic/:topicId',
   requireAuthForAnalytics,
-  getAssignmentByCourse
+  getAssignmentByTopic
 )
 
+// Submit assignment
 router.post(
   '/:assignmentId/submit',
   requireAuthForAnalytics,

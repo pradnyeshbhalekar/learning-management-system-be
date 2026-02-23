@@ -1,12 +1,13 @@
 import { Request, Response } from 'express'
 import { supabaseAdmin } from '../lib/supabase'
 
-export async function createAssignment(req: Request, res: Response) {
-  const { course_id, title, description, max_marks, passing_marks } = req.body
 
-  if (!course_id || !title || max_marks == null || passing_marks == null) {
+export async function createAssignment(req: Request, res: Response) {
+  const { topic_id, title, description, max_marks, passing_marks } = req.body
+
+  if (!topic_id || !title || max_marks == null || passing_marks == null) {
     return res.status(400).json({
-      error: 'course_id, title, max_marks and passing_marks are required',
+      error: 'topic_id, title, max_marks and passing_marks are required',
     })
   }
 
@@ -19,7 +20,7 @@ export async function createAssignment(req: Request, res: Response) {
   const { data, error } = await supabaseAdmin
     .from('assignments')
     .insert({
-      course_id,
+      topic_id,
       title,
       description,
       max_marks,
@@ -37,10 +38,9 @@ export async function createAssignment(req: Request, res: Response) {
 }
 
 export async function updateAssignment(req: Request, res: Response) {
-  const assignmentIdParam = req.params.assignmentId
-  const assignmentId = Array.isArray(assignmentIdParam)
-    ? assignmentIdParam[0]
-    : assignmentIdParam
+  const assignmentId = Array.isArray(req.params.assignmentId)
+    ? req.params.assignmentId[0]
+    : req.params.assignmentId
 
   if (!assignmentId) {
     return res.status(400).json({ error: 'assignmentId is required' })
@@ -78,14 +78,39 @@ export async function updateAssignment(req: Request, res: Response) {
   res.json(data)
 }
 
+/**
+ * DELETE ASSIGNMENT (ADMIN)
+ */
+export async function deleteAssignment(req: Request, res: Response) {
+  const assignmentId = Array.isArray(req.params.assignmentId)
+    ? req.params.assignmentId[0]
+    : req.params.assignmentId
+
+  if (!assignmentId) {
+    return res.status(400).json({ error: 'assignmentId is required' })
+  }
+
+  const { error } = await supabaseAdmin
+    .from('assignments')
+    .delete()
+    .eq('id', assignmentId)
+
+  if (error) {
+    console.error(error)
+    return res.status(500).json({ error: 'Failed to delete assignment' })
+  }
+
+  res.json({ message: 'Assignment deleted successfully' })
+}
+
+
 export async function getSubmissionsByAssignment(
   req: Request,
   res: Response
 ) {
-  const assignmentIdParam = req.params.assignmentId
-  const assignmentId = Array.isArray(assignmentIdParam)
-    ? assignmentIdParam[0]
-    : assignmentIdParam
+  const assignmentId = Array.isArray(req.params.assignmentId)
+    ? req.params.assignmentId[0]
+    : req.params.assignmentId
 
   if (!assignmentId) {
     return res.status(400).json({ error: 'assignmentId is required' })
@@ -112,14 +137,11 @@ export async function getSubmissionsByAssignment(
   res.json(data)
 }
 
-export async function evaluateSubmission(
-  req: Request,
-  res: Response
-) {
-  const submissionIdParam = req.params.submissionId
-  const submissionId = Array.isArray(submissionIdParam)
-    ? submissionIdParam[0]
-    : submissionIdParam
+
+export async function evaluateSubmission(req: Request, res: Response) {
+  const submissionId = Array.isArray(req.params.submissionId)
+    ? req.params.submissionId[0]
+    : req.params.submissionId
 
   const { marks_awarded } = req.body
 
@@ -129,13 +151,11 @@ export async function evaluateSubmission(
     })
   }
 
-  // fetch assignment to validate marks
   const { data: submission, error: fetchError } = await supabaseAdmin
     .from('assignment_submissions')
     .select(`
       id,
       user_id,
-      assignment_id,
       assignments (
         max_marks,
         passing_marks
@@ -148,14 +168,14 @@ export async function evaluateSubmission(
     return res.status(404).json({ error: 'Submission not found' })
   }
 
-  if (marks_awarded > (submission.assignments as any).max_marks) {
+  if (marks_awarded > submission.assignments[0].max_marks) {
     return res.status(400).json({
       error: 'Marks exceed max marks',
     })
   }
 
   const status =
-    marks_awarded >= (submission.assignments as any).passing_marks
+    marks_awarded >= submission.assignments[0].passing_marks
       ? 'evaluated'
       : 'rejected'
 
@@ -173,49 +193,8 @@ export async function evaluateSubmission(
     return res.status(500).json({ error: 'Failed to evaluate submission' })
   }
 
-  // Trigger certificate generation if passed
-  if (status === 'evaluated') {
-    const { generateCertificateInternal } = require('./certificate.controller')
-    // We need courseId from submission
-    const { data: submissionFull } = await supabaseAdmin
-      .from('assignment_submissions')
-      .select(`
-            assignments (course_id)
-        `)
-      .eq('id', submissionId)
-      .single();
-
-    if (submissionFull && submissionFull.assignments) {
-      generateCertificateInternal(submission.user_id, (submissionFull.assignments as any).course_id)
-    }
-  }
-
   res.json({
     message: 'Submission evaluated',
     status,
   })
-}
-
-
-export async function deleteAssignment(req: Request, res: Response) {
-  const assignmentIdParam = req.params.assignmentId
-  const assignmentId = Array.isArray(assignmentIdParam)
-    ? assignmentIdParam[0]
-    : assignmentIdParam
-
-  if (!assignmentId) {
-    return res.status(400).json({ error: 'assignmentId is required' })
-  }
-
-  const { error } = await supabaseAdmin
-    .from('assignments')
-    .delete()
-    .eq('id', assignmentId)
-
-  if (error) {
-    console.error(error)
-    return res.status(500).json({ error: 'Failed to delete assignment' })
-  }
-
-  res.json({ message: 'Assignment deleted successfully' })
 }
