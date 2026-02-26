@@ -1,219 +1,215 @@
-# LMS Backend API Documentation
 
-## Base URLs
+# LMS Backend API Documentation (Single Source of Truth)
 
-Local:
+Base URL (Local):
 http://localhost:4000
 
 ---
 
 ## Authentication
 
-All protected APIs require a JWT sent via header:
+All protected APIs require:
 
 Authorization: Bearer <JWT_TOKEN>
 
-### JWT Payload Shape
-
+### JWT Payload
+```json
 {
-  "sub": "<user-id>",
+  "sub": "<user-uuid>",
   "role": "admin" | "client",
   "iat": 1234567890,
   "exp": 1234567890
 }
-
-- sub: user identifier (UUID string)
-- role: used for RBAC (admin / client)
+```
 
 ---
 
-## Dev-only (Testing)
+## Dev Utilities (Development Only)
 
-### Generate Test Token
-
+### Generate Token
 POST /api/dev/generate-token
 
-Request body:
+Headers:
+Content-Type: application/json
+
+Body:
+```json
 {
   "role": "admin" | "client"
 }
+```
 
 Response:
+```json
 {
   "token": "<JWT>"
 }
-
-Development only. Not available in production.
+```
 
 ---
 
-## Categories
+# Categories
 
-### Get all categories
+### Get All Categories
 GET /api/categories  
 Public
 
-### Create category (Admin)
+Response:
+```json
+[
+  {
+    "id": "<uuid>",
+    "name": "Web Development",
+    "description": "Frontend & Backend"
+  }
+]
+```
+
+### Create Category (Admin)
 POST /api/categories  
 Authorization: Bearer <ADMIN_TOKEN>
 
 Body:
+```json
 {
   "name": "Web Development",
   "description": "Frontend & Backend"
 }
-
-### Update category (Admin)
-PUT /api/categories/:id  
-Authorization: Bearer <ADMIN_TOKEN>
-
-### Delete category (Admin)
-DELETE /api/categories/:id  
-Authorization: Bearer <ADMIN_TOKEN>
+```
 
 ---
 
-## Courses
+# Courses
 
-### Get all courses
+### Get All Courses
 GET /api/courses  
 Public
 
-### Get course by ID
-GET /api/courses/:id  
+### Get Course By ID
+GET /api/courses/:courseId  
 Public
 
-### Get course details
-GET /api/courses/:id/details  
-Public
-
-### Create course (Admin)
+### Create Course (Admin)
 POST /api/courses  
 Authorization: Bearer <ADMIN_TOKEN>
 
-### Delete course (Admin)
-DELETE /api/courses/:id  
-Authorization: Bearer <ADMIN_TOKEN>
-
----
-# Topics API
-
-This document describes **only the Topics-related APIs** in the LMS backend.
-
----
-
-## Create Topic (Admin)
-
-POST /api/topics
-Authorization: Bearer <ADMIN_TOKEN>
-
-Request:
+Body:
+```json
 {
-  "title": "Introduction",
-  "courseId": "COURSE_UUID",
-  "orderIndex": 1
+  "title": "Full Stack Development",
+  "description": "Learn frontend + backend",
+  "category_id": "<category-uuid>"
 }
-
-Response 201:
-{
-  "id": "TOPIC_UUID",
-  "title": "Introduction",
-  "course_id": "COURSE_UUID",
-  "order_index": 1
-}
-
----
-
-## Get Topics by Course (Public)
-
-GET /api/topics/course/:courseId
+```
 
 Response:
-[
-  {
-    "id": "TOPIC_UUID",
-    "title": "Introduction",
-    "order_index": 1,
-    "videos": []
-  }
-]
+```json
+{
+  "id": "<course-uuid>",
+  "title": "Full Stack Development"
+}
+```
 
 ---
 
-## Update Topic (Admin)
+# Topics (Course-level)
 
-PUT /api/topics/:id
+### Create Topic (Admin)
+POST /api/topics  
 Authorization: Bearer <ADMIN_TOKEN>
 
-Request:
+Body:
+```json
+{
+  "courseId": "<course-uuid>",
+  "title": "Introduction",
+  "orderIndex": 1
+}
+```
+
+### Get Topics By Course
+GET /api/topics/course/:courseId  
+Public
+
+Response:
+```json
+[
+  {
+    "id": "<topic-uuid>",
+    "title": "Introduction",
+    "order_index": 1
+  }
+]
+```
+
+### Update Topic (Admin)
+PUT /api/topics/:topicId  
+Authorization: Bearer <ADMIN_TOKEN>
+
+Body:
+```json
 {
   "title": "Updated Topic",
   "order_index": 2
 }
+```
 
----
-
-## Delete Topic (Admin)
-
-DELETE /api/topics/:id
+### Delete Topic (Admin)
+DELETE /api/topics/:topicId  
 Authorization: Bearer <ADMIN_TOKEN>
 
 Response:
-{
-  "success": true
-}
-
-## Complete a Topic
-
-### Endpoint
-```
-POST /api/topics/:topicId/complete
+```json
+{ "success": true }
 ```
 
-### Description
-Marks a topic as completed and optionally records watch duration.
+### Complete Topic (Client)
+POST /api/topics/:topicId/complete  
+Authorization: Bearer <CLIENT_TOKEN>
 
-### URL Params
-- `topicId` – UUID of the topic
-
-### Request Body
+Body:
 ```json
 {
-  "course_id": "<COURSE_UUID>",
+  "course_id": "<course-uuid>",
   "watch_duration_seconds": 420
 }
 ```
 
-### Response
+---
+
+# Videos (Topic-level)
+
+### Upload Video (Admin)
+POST /api/video  
+Authorization: Bearer <ADMIN_TOKEN>  
+Content-Type: multipart/form-data
+
+Form Data:
+- video: <file>
+- topicId: <topic-uuid>
+- courseId: <course-uuid>
+- title: Intro Video
+
+Response:
 ```json
 {
-  "message": "Topic completed"
+  "id": "<video-uuid>",
+  "topic_id": "<topic-uuid>",
+  "video_path": "topic-videos/<topicId>/<videoId>.mp4"
 }
 ```
 
-
-
-
-## Enrollments
-
-### Enroll in a course (Client)
-POST /api/enrollments  
-Authorization: Bearer <CLIENT_TOKEN>
-
-Body:
-{
-  "courseId": "<course-uuid>"
-}
-
-### Get my enrollments (Client)
-GET /api/enrollments/me  
+### Stream Video (Client)
+GET /api/video/:videoId/stream  
 Authorization: Bearer <CLIENT_TOKEN>
 
 ---
 
-# Quiz – User (Course-level)
+# Quiz (Course-level)
 
-## Get quiz by course
+## User
+
+### Get Quiz By Course
 GET /api/quiz/course/:courseId  
 Authorization: Bearer <CLIENT_TOKEN>
 
@@ -221,34 +217,12 @@ Response:
 ```json
 {
   "quizId": "<quiz-uuid>",
-  "courseId": "<course-uuid>",
   "title": "Final Course Quiz",
-  "questions": [
-    {
-      "id": "<question-uuid>",
-      "question_text": "2 + 2 = ?",
-      "question_type": "mcq",
-      "question_order": 1,
-      "options": [
-        {
-          "id": "<option-uuid>",
-          "option_text": "3",
-          "option_order": 1
-        },
-        {
-          "id": "<option-uuid>",
-          "option_text": "4",
-          "option_order": 2
-        }
-      ]
-    }
-  ]
+  "questions": []
 }
 ```
 
----
-
-## Submit quiz attempt (Client)
+### Submit Quiz
 POST /api/quiz/course/:courseId/submit  
 Authorization: Bearer <CLIENT_TOKEN>
 
@@ -274,23 +248,19 @@ Response:
 }
 ```
 
----
-
-## Get my quiz attempts (Client)
+### My Quiz Attempts
 GET /api/quiz/my-attempts  
 Authorization: Bearer <CLIENT_TOKEN>
 
 ---
 
-# Quiz – Admin (Course-level)
+## Admin
 
-## Get quiz questions
+### Get Questions
 GET /api/admin/quiz/questions?quizId=<quiz-uuid>  
 Authorization: Bearer <ADMIN_TOKEN>
 
----
-
-## Create quiz question (Admin)
+### Create Question
 POST /api/admin/quiz/questions  
 Authorization: Bearer <ADMIN_TOKEN>
 
@@ -310,202 +280,76 @@ Body:
 
 ---
 
-## Update quiz question (Admin)
-PUT /api/admin/quiz/questions/:questionId  
+# Assignments (Course-level)
+
+### Create Assignment (Admin)
+POST /api/admin/assignments  
 Authorization: Bearer <ADMIN_TOKEN>
 
----
-
-## Delete quiz question (Admin)
-DELETE /api/admin/quiz/questions/:questionId  
-Authorization: Bearer <ADMIN_TOKEN>
-
----
-
-# Videos API
-
-This document describes **video upload and streaming** in the LMS backend.
-
-Videos:
-- belong to a **topic**
-- are **uploaded from the admin’s machine**
-- are **stored in Supabase Storage**
-- are streamed by **videoId** (not topic)
-
----
-
-## Upload Video (Admin)
-
-Uploads a video file for a specific topic.  
-Creates a record in the `videos` table.
-
-> ⚠️ Large video uploads via backend may fail due to size limits.  
-> For production, prefer **direct client → Supabase uploads**.
-
----
-
-## Endpoint
-
-**POST** `/api/video`
-
----
-
-## Auth
-
-**Required (Admin only)**  
-`Authorization: Bearer <ADMIN_TOKEN>`
-
----
-
-## Content-Type
-
-`multipart/form-data`
-
----
-
-## Form Fields
-
-| Field     | Type | Required | Description |
-|----------|------|----------|-------------|
-| video    | File | Yes | Video file (`.mp4`, `.mov`, etc.) |
-| topicId  | UUID | Yes | Topic ID the video belongs to |
-| courseId | UUID | Yes | Course ID (must match topic) |
-| title    | Text | No  | Video title (defaults to filename) |
-
----
-
-## Example (curl)
-
-```bash
-curl -X POST http://localhost:4000/api/video \
-  -H "Authorization: Bearer <ADMIN_TOKEN>" \
-  -F "video=@intro.mp4" \
-  -F "topicId=442f03d6-f13c-4135-a5d3-b45adcf20ef2" \
-  -F "courseId=38ca2086-c979-4f09-b9e0-c54922ac73fc" \
-  -F "title=Intro Video"
-```
-
----
-
-## Response (201)
-
+Body:
 ```json
 {
-  "id": "VIDEO_UUID",
-  "title": "Intro Video",
-  "topic_id": "TOPIC_UUID",
-  "video_path": "topic-videos/<topicId>/<videoId>.mp4",
-  "created_at": "2026-02-18T16:40:00Z"
+  "course_id": "<course-uuid>",
+  "title": "Final Assignment",
+  "description": "Upload PDF",
+  "max_marks": 100,
+  "passing_marks": 40
 }
 ```
 
----
+### Get Assignment By Course
+GET /api/assignments/course/:courseId  
+Authorization: Bearer <CLIENT_TOKEN>
 
-## Stream Video (User)
+### Submit Assignment
+POST /api/assignments/:assignmentId/submit  
+Authorization: Bearer <CLIENT_TOKEN>  
+Content-Type: multipart/form-data
 
-Streams a video by **videoId**.  
-Supports HTTP Range requests for smooth playback.
-
----
-
-## Endpoint
-
-**GET** `/api/video/:videoId/stream`
-
----
-
-## Auth
-
-**Required**  
-`Authorization: Bearer <USER_TOKEN>`
-
----
-
-## Example
-
-```bash
-curl http://localhost:4000/api/video/VIDEO_UUID/stream \
-  -H "Authorization: Bearer <USER_TOKEN>" \
-  --output video.mp4
-```
-
----
-
-
-
-## Labs
-
-### Get All Labs
-GET /api/labs
-
-Public
-
----
-
-### Create Lab (Admin)
-POST /api/labs
-
-Body:
-{
-  "name": "React Basics Lab",
-  "code": "LAB001",
-  "description": "Hands-on practice"
-}
-
----
-
-### Update Lab (Admin)
-PUT /api/labs/:id
-
----
-
-### Delete Lab (Admin)
-DELETE /api/labs/:id
-
----
-
-## Course ↔ Labs (course_labs)
-
-### Get Labs for Course
-GET /api/labs/courses/:courseId/labs
+Form Data:
+- file: assignment.pdf
 
 Response:
-[
-  {
-    "id": "<lab-uuid>",
-    "name": "React Basics Lab",
-    "code": "LAB001"
-  }
-]
+```json
+{ "message": "Assignment submitted successfully" }
+```
 
----
-
-### Assign Labs to Course (Admin)
-POST /api/labs/courses/:courseId/labs
+### Evaluate Submission (Admin)
+POST /api/admin/assignments/submissions/:submissionId/evaluate  
+Authorization: Bearer <ADMIN_TOKEN>
 
 Body:
-{
-  "labIds": ["<lab-uuid-1>", "<lab-uuid-2>"]
-}
-
-Behavior:
-- Deletes old assignments
-- Inserts new rows into course_labs
+```json
+{ "marks_awarded": 75 }
+```
 
 ---
 
+# Labs
 
-## Dashboard Stats (User)
+### Get Labs
+GET /api/labs  
+Public
 
-### Endpoint
+### Assign Labs To Course
+POST /api/labs/courses/:courseId/labs  
+Authorization: Bearer <ADMIN_TOKEN>
+
+Body:
+```json
+{
+  "labIds": ["<lab-uuid>"]
+}
 ```
-GET /api/dashboard/me
-```
 
-### Description
-Returns aggregated learning statistics for the authenticated user.
+---
 
-### Response
+# Dashboard (Client)
+
+GET /api/dashboard/me  
+Authorization: Bearer <CLIENT_TOKEN>
+
+Response:
 ```json
 {
   "enrolled": 1,
@@ -516,204 +360,12 @@ Returns aggregated learning statistics for the authenticated user.
 }
 ```
 
-### What Each Field Means
-- `enrolled` → total courses enrolled
-- `topicsCompleted` → total topics completed
-- `coursesCompleted` → courses where `completed_at` is not null
-- `watchTimeSeconds` → sum of `watch_duration_seconds` across all topics
-
 ---
 
-## Tables Involved
+## Final Notes
 
-- `enrollments`
-- `topics`
-- `topic_completions`
-- `users` (mock user via Supabase Auth)
-
----
-
-## Design Notes
-
-- No counters are stored; all stats are **derived**
-- Enrollment completion is **driven by topic completion**
-- Watch duration is **telemetry**, not a completion gate
-- Clean separation between real auth and analytics auth
-
----
-
-# Assignments API
-
-This document describes **only the Assignment-related APIs** in the LMS backend.
-
----
-
-## Create Assignment (Admin)
-
-Creates **one assignment per course**.
-
-POST /api/admin/assignments  
-Authorization: Bearer <ADMIN_TOKEN>
-
-Request:
-```json
-{
-  "course_id": "COURSE_UUID",
-  "title": "Final Course Assignment",
-  "description": "Upload your final project PDF",
-  "max_marks": 100,
-  "passing_marks": 40
-}
-```
-
-Response 201:
-```json
-{
-  "id": "ASSIGNMENT_UUID",
-  "course_id": "COURSE_UUID",
-  "title": "Final Course Assignment",
-  "description": "Upload your final project PDF",
-  "max_marks": 100,
-  "passing_marks": 40,
-  "created_at": "2026-02-26T18:55:32Z"
-}
-```
-
----
-
-## Get Assignment by Course (User)
-
-Fetches the assignment linked to a course.
-
-GET /api/assignments/course/:courseId  
-Authorization: Bearer <USER_TOKEN>
-
-Response:
-```json
-{
-  "id": "ASSIGNMENT_UUID",
-  "course_id": "COURSE_UUID",
-  "title": "Final Course Assignment",
-  "description": "Upload your final project PDF",
-  "max_marks": 100,
-  "passing_marks": 40
-}
-```
-
-If no assignment exists:
-```json
-null
-```
-
----
-
-## Submit Assignment (User)
-
-Allows a user to submit **one file only** for the assignment.
-
-POST /api/assignments/:assignmentId/submit  
-Authorization: Bearer <USER_TOKEN>  
-Content-Type: multipart/form-data
-
-Form Data:
-```
-file = assignment.pdf
-```
-
-Response 201:
-```json
-{
-  "message": "Assignment submitted successfully"
-}
-```
-
-Errors:
-- Duplicate submission → `Assignment already submitted`
-- Missing file → `Assignment file is required`
-
----
-
-## View Assignment Submissions (Admin)
-
-View all submissions for an assignment.
-
-GET /api/admin/assignments/:assignmentId/submissions  
-Authorization: Bearer <ADMIN_TOKEN>
-
-Response:
-```json
-[
-  {
-    "id": "SUBMISSION_UUID",
-    "user_id": "USER_UUID",
-    "file_url": "https://storage.example.com/assignment.pdf",
-    "submitted_at": "2026-02-27T00:10:00Z",
-    "marks_awarded": null,
-    "status": "submitted"
-  }
-]
-```
-
----
-
-## Evaluate Assignment Submission (Admin)
-
-Grades a user submission and determines pass/fail.
-
-POST /api/admin/assignments/submissions/:submissionId/evaluate  
-Authorization: Bearer <ADMIN_TOKEN>
-
-Request:
-```json
-{
-  "marks_awarded": 65
-}
-```
-
-Response:
-```json
-{
-  "message": "Submission evaluated",
-  "status": "evaluated"
-}
-```
-
-If failed:
-```json
-{
-  "status": "rejected"
-}
-```
-
----
-
-## Delete Assignment (Admin)
-
-Deletes an assignment and all related submissions.
-
-DELETE /api/admin/assignments/:assignmentId  
-Authorization: Bearer <ADMIN_TOKEN>
-
-Response:
-```json
-{
-  "message": "Assignment deleted successfully"
-}
-```
-
----
-
-## Notes
-
-- Assignments are **course-level only**.
-- Only **one assignment per course**.
-- Users can submit **only once per assignment**.
-- Files are stored in Supabase Storage (`assignments` bucket).
-- Assignment is considered **passed** if:
-  ```
-  marks_awarded >= passing_marks
-  ```
-
----
-
-_End of document_
+- One quiz per course
+- One assignment per course
+- Topics belong to courses
+- Videos belong to topics
+- This file is the ONLY valid API reference
