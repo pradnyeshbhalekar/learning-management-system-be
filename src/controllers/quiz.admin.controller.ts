@@ -1,20 +1,26 @@
 import { Request, Response } from 'express'
 import { supabase } from '../lib/supabase'
+import { supabaseAdmin } from '../lib/supabase'
 
-// GET questions (admin view)
+
+/* =========================
+   GET QUESTIONS BY QUIZ
+   ========================= */
 export async function getQuestions(req: Request, res: Response) {
-  const { topicId, courseId } = req.query
+  const { quizId } = req.query
 
-  let query = supabase
+  if (!quizId) {
+    return res.status(400).json({ error: 'quizId is required' })
+  }
+
+  const { data, error } = await supabase
     .from('quiz_questions')
     .select(`
       id,
-      topic_id,
-      course_id,
-      is_final_exam,
+      quiz_id,
       question_text,
-      question_order,
       question_type,
+      question_order,
       quiz_options (
         id,
         option_text,
@@ -22,155 +28,182 @@ export async function getQuestions(req: Request, res: Response) {
         is_correct
       )
     `)
+    .eq('quiz_id', quizId)
     .order('question_order')
 
-  if (topicId) query.eq('topic_id', topicId)
-  if (courseId) query.eq('course_id', courseId)
+  if (error) {
+    return res.status(500).json({ error: error.message })
+  }
 
-  const { data, error } = await query
-
-  if (error) return res.status(400).json({ error: error.message })
   res.json(data)
 }
 
-// CREATE question
+/* =========================
+   CREATE QUESTION
+   ========================= */
 export async function createQuestion(req: Request, res: Response) {
   const {
-    topic_id,
-    course_id,
+    quiz_id,
     question_text,
     question_type,
     question_order,
-    is_final_exam = false,
     options,
   } = req.body
 
-  if (!question_text || !course_id || !options?.length) {
+  if (!quiz_id || !question_text || !question_type || !options?.length) {
     return res.status(400).json({ error: 'Invalid payload' })
   }
 
+  // 1. Create question
   const { data: question, error } = await supabase
     .from('quiz_questions')
     .insert({
-      topic_id: is_final_exam ? null : topic_id,
-      course_id,
+      quiz_id,
       question_text,
       question_type,
       question_order,
-      is_final_exam,
     })
     .select()
     .single()
 
-  if (error) return res.status(400).json({ error: error.message })
+  if (error || !question) {
+    return res.status(500).json({ error: error?.message })
+  }
 
-  const optionRows = options.map((o: any, i: number) => ({
+  // 2. Insert options
+  const optionRows = options.map((o: any, idx: number) => ({
     question_id: question.id,
     option_text: o.option_text,
     is_correct: o.is_correct,
-    option_order: i + 1,
+    option_order: idx + 1,
   }))
 
   const { error: optErr } = await supabase
     .from('quiz_options')
     .insert(optionRows)
 
-  if (optErr) return res.status(400).json({ error: optErr.message })
+  if (optErr) {
+    return res.status(500).json({ error: optErr.message })
+  }
 
   res.status(201).json(question)
 }
 
-// UPDATE question
+/* =========================
+   UPDATE QUESTION
+   ========================= */
 export async function updateQuestion(req: Request, res: Response) {
-  const { id } = req.params
+  const questionId = req.params.id
   const { question_text, question_type, question_order, options } = req.body
+
+  if (!questionId) {
+    return res.status(400).json({ error: 'questionId is required' })
+  }
 
   const { error } = await supabase
     .from('quiz_questions')
-    .update({ question_text, question_type, question_order })
-    .eq('id', id)
-
-  if (error) return res.status(400).json({ error: error.message })
-
-  if (options?.length) {
-    await supabase.from('quiz_options').delete().eq('question_id', id)
-
-    const rows = options.map((o: any, i: number) => ({
-      question_id: id,
-      option_text: o.option_text,
-      is_correct: o.is_correct,
-      option_order: i + 1,
-    }))
-
-    const { error } = await supabase.from('quiz_options').insert(rows)
-    if (error) return res.status(400).json({ error: error.message })
-  }
-
-  res.json({ success: true })
-}
-
-// DELETE question
-export async function deleteQuestion(req: Request, res: Response) {
-  const { id } = req.params
-
-  await supabase.from('quiz_options').delete().eq('question_id', id)
-  const { error } = await supabase.from('quiz_questions').delete().eq('id', id)
-
-  if (error) return res.status(400).json({ error: error.message })
-  res.json({ success: true })
-}
-
-export async function updateQuizQuestion(req: Request, res: Response) {
-  const questionId = req.params.id
-  const {
-    question_text,
-    question_order,
-    options, // <-- important
-  } = req.body
-
-  if (!question_text && !question_order && !Array.isArray(options)) {
-    return res.status(400).json({ error: 'Nothing to update' })
-  }
-
-  // 1. Update question
-  const { data: question, error: questionError } = await supabase
-    .from('quiz_questions')
     .update({
       ...(question_text && { question_text }),
+      ...(question_type && { question_type }),
       ...(question_order !== undefined && { question_order }),
     })
     .eq('id', questionId)
-    .select()
-    .single()
 
-  if (questionError || !question) {
-    return res.status(500).json({ error: 'Failed to update question' })
+  if (error) {
+    return res.status(500).json({ error: error.message })
   }
 
-  // 2. Replace options (if provided)
+  // Replace options if provided
   if (Array.isArray(options)) {
-    // Delete old options
-    await supabase
-      .from('quiz_options')
-      .delete()
-      .eq('question_id', questionId)
+    await supabase.from('quiz_options').delete().eq('question_id', questionId)
 
-    // Insert new options
-    const rows = options.map((opt, idx) => ({
+    const rows = options.map((o: any, idx: number) => ({
       question_id: questionId,
-      option_text: opt.option_text,
-      is_correct: opt.is_correct,
-      option_order: idx,
+      option_text: o.option_text,
+      is_correct: o.is_correct,
+      option_order: idx + 1,
     }))
 
-    const { error: optionsError } = await supabase
+    const { error: optErr } = await supabase
       .from('quiz_options')
       .insert(rows)
 
-    if (optionsError) {
-      return res.status(500).json({ error: 'Failed to update options' })
+    if (optErr) {
+      return res.status(500).json({ error: optErr.message })
     }
   }
 
   res.json({ success: true })
+}
+
+/* =========================
+   DELETE QUESTION
+   ========================= */
+export async function deleteQuestion(req: Request, res: Response) {
+  const questionId = req.params.id
+
+  if (!questionId) {
+    return res.status(400).json({ error: 'questionId is required' })
+  }
+
+  await supabase.from('quiz_options').delete().eq('question_id', questionId)
+
+  const { error } = await supabase
+    .from('quiz_questions')
+    .delete()
+    .eq('id', questionId)
+
+  if (error) {
+    return res.status(500).json({ error: error.message })
+  }
+
+  res.json({ success: true })
+}
+
+export async function getQuizByCourse(req: Request, res: Response) {
+  const { courseId } = req.params
+
+  const { data, error } = await supabase
+    .from('quizzes')
+    .select('*')
+    .eq('course_id', courseId)
+    .single()
+
+  if (error || !data) {
+    return res.status(404).json({ error: 'Quiz not found for course' })
+  }
+
+  res.json(data)
+}
+
+export async function createQuiz(req: Request, res: Response) {
+  const { course_id, title, total_marks, passing_marks } = req.body
+
+  if (!course_id || !title || total_marks == null || passing_marks == null) {
+    return res.status(400).json({ error: 'Invalid payload' })
+  }
+
+  if (passing_marks > total_marks) {
+    return res.status(400).json({
+      error: 'passing_marks cannot be greater than total_marks',
+    })
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from('quizzes')
+    .insert({
+      course_id,
+      title,
+      total_marks,
+      passing_marks,
+    })
+    .select()
+    .single()
+
+  if (error) {
+    console.error(error)
+    return res.status(500).json({ error: 'Failed to create quiz' })
+  }
+
+  res.status(201).json(data)
 }

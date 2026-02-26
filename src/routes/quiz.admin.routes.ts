@@ -1,22 +1,22 @@
 import { Router } from 'express'
-import { devAuth } from '../middlewares/devAuth.middleware'
-import { requireAdmin,requireAuth } from '../middlewares/auth.middleware'
+import { requireAuth, requireAdmin } from '../middlewares/auth.middleware'
 import {
+  getQuestions,
   createQuestion,
-  updateQuestion,
-  deleteQuestion,
-  getQuestions,updateQuizQuestion
+  updateQuestion,createQuiz,
+  deleteQuestion,getQuizByCourse
 } from '../controllers/quiz.admin.controller'
 
 const router = Router()
 
-
 router.use(requireAuth, requireAdmin)
+router.post('/', createQuiz)
+router.get('/course/:courseId',getQuizByCourse)
 
-router.get('/', getQuestions)
-router.post('/', createQuestion)
-router.put('/:id', updateQuizQuestion)
-router.delete('/:id', deleteQuestion)
-
+/* QUESTIONS */
+router.get('/questions', getQuestions)
+router.post('/questions', createQuestion)
+router.put('/questions/:id', updateQuestion)
+router.delete('/questions/:id', deleteQuestion)
 
 export default router

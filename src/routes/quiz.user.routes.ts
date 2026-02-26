@@ -1,18 +1,15 @@
 import { Router } from 'express'
-import { requireAuth } from '../middlewares/auth.middleware'
+import { requireAuthForAnalytics } from '../middlewares/auth.middleware'
 import {
-  getQuizByTopic,
+  getQuizByCourse,
   submitQuiz,
   getMyQuizAttempts,
 } from '../controllers/quiz.user.controller'
 
 const router = Router()
 
-
-router.get('/topic/:topicId', requireAuth,getQuizByTopic)
-
-
-router.post('/submit', requireAuth, submitQuiz)
-router.get('/my-attempts', requireAuth, getMyQuizAttempts)
+router.get('/course/:courseId', requireAuthForAnalytics, getQuizByCourse)
+router.post('/course/:courseId/submit', requireAuthForAnalytics, submitQuiz)
+router.get('/my-attempts', requireAuthForAnalytics, getMyQuizAttempts)
 
 export default router

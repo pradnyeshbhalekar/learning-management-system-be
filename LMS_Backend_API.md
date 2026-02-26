@@ -211,88 +211,113 @@ Authorization: Bearer <CLIENT_TOKEN>
 
 ---
 
-## Quiz – User
+# Quiz – User (Course-level)
 
-### Get quiz by topic
-GET /api/quiz/topic/:topicId  
-Public
-
-### Submit quiz attempt (Client)
-POST /api/quiz/submit  
+## Get quiz by course
+GET /api/quiz/course/:courseId  
 Authorization: Bearer <CLIENT_TOKEN>
 
-Body:
+Response:
+```json
 {
-  "topicId": "<topic-uuid>",
+  "quizId": "<quiz-uuid>",
   "courseId": "<course-uuid>",
-  "isFinalExam": false,
-  "timeTaken": 60,
-  "answers": [
+  "title": "Final Course Quiz",
+  "questions": [
     {
-      "questionId": "<question-uuid>",
-      "selectedOptionId": "<option-uuid>"
+      "id": "<question-uuid>",
+      "question_text": "2 + 2 = ?",
+      "question_type": "mcq",
+      "question_order": 1,
+      "options": [
+        {
+          "id": "<option-uuid>",
+          "option_text": "3",
+          "option_order": 1
+        },
+        {
+          "id": "<option-uuid>",
+          "option_text": "4",
+          "option_order": 2
+        }
+      ]
     }
   ]
 }
+```
+
+---
+
+## Submit quiz attempt (Client)
+POST /api/quiz/course/:courseId/submit  
+Authorization: Bearer <CLIENT_TOKEN>
+
+Body:
+```json
+{
+  "timeTaken": 60,
+  "answers": [
+    {
+      "question_id": "<question-uuid>",
+      "option_id": "<option-uuid>"
+    }
+  ]
+}
+```
 
 Response:
+```json
 {
   "score": 80,
   "passed": true,
-  "scoreId": "<uuid>"
+  "attemptId": "<attempt-uuid>"
 }
+```
 
-### Get my quiz attempts (Client)
+---
+
+## Get my quiz attempts (Client)
 GET /api/quiz/my-attempts  
 Authorization: Bearer <CLIENT_TOKEN>
 
 ---
 
-## Quiz – Admin
+# Quiz – Admin (Course-level)
 
-### Get quiz questions
-GET /api/admin/quiz  
+## Get quiz questions
+GET /api/admin/quiz/questions?quizId=<quiz-uuid>  
 Authorization: Bearer <ADMIN_TOKEN>
 
-Optional query params:
-?courseId=<uuid>  
-?topicId=<uuid>
+---
 
-### Create quiz question (Admin)
-POST /api/admin/quiz  
+## Create quiz question (Admin)
+POST /api/admin/quiz/questions  
 Authorization: Bearer <ADMIN_TOKEN>
 
 Body:
+```json
 {
-  "course_id": "<course-uuid>",
-  "topic_id": "<topic-uuid>",
+  "quiz_id": "<quiz-uuid>",
   "question_text": "2 + 2 = ?",
-  "question_type": "multiple_choice",
+  "question_type": "mcq",
   "question_order": 1,
-  "is_final_exam": false,
   "options": [
     { "option_text": "3", "is_correct": false },
     { "option_text": "4", "is_correct": true }
   ]
 }
+```
 
-### Update quiz question (Admin)
-PUT /api/admin/quiz/:questionId  
+---
+
+## Update quiz question (Admin)
+PUT /api/admin/quiz/questions/:questionId  
 Authorization: Bearer <ADMIN_TOKEN>
-Body:
-{
-  "question_text": "2 + 2 = ?",
-  "question_type": "multiple_choice",
-  "question_order": 1,
-  "is_final_exam": false,
-  "options": [
-    { "option_text": "3", "is_correct": false },
-    { "option_text": "4", "is_correct": true }
-  ]
-}
 
-### Delete quiz question (Admin)
-DELETE /api/admin/quiz/:id  
+---
+
+## Delete quiz question (Admin)
+DELETE /api/admin/quiz/questions/:questionId  
 Authorization: Bearer <ADMIN_TOKEN>
 
 ---
