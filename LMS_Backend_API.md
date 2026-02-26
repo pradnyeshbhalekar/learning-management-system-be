@@ -297,25 +297,37 @@ Authorization: Bearer <ADMIN_TOKEN>
 
 ---
 
-## Videos
+# Videos API
 
+This document describes **video upload and streaming** in the LMS backend.
 
-# Upload Video (Admin)
+Videos:
+- belong to a **topic**
+- are **uploaded from the admin’s machine**
+- are **stored in Supabase Storage**
+- are streamed by **videoId** (not topic)
+
+---
+
+## Upload Video (Admin)
 
 Uploads a video file for a specific topic.  
-The backend stores the file in Supabase Storage and creates a DB record in `videos`.
+Creates a record in the `videos` table.
+
+> ⚠️ Large video uploads via backend may fail due to size limits.  
+> For production, prefer **direct client → Supabase uploads**.
 
 ---
 
 ## Endpoint
 
-**POST** `/api/video/upload`
+**POST** `/api/video`
 
 ---
 
 ## Auth
 
-**Required**  
+**Required (Admin only)**  
 `Authorization: Bearer <ADMIN_TOKEN>`
 
 ---
@@ -330,7 +342,7 @@ The backend stores the file in Supabase Storage and creates a DB record in `vide
 
 | Field     | Type | Required | Description |
 |----------|------|----------|-------------|
-| file     | File | Yes | Video file (`.mp4`, `.mov`, etc.) |
+| video    | File | Yes | Video file (`.mp4`, `.mov`, etc.) |
 | topicId  | UUID | Yes | Topic ID the video belongs to |
 | courseId | UUID | Yes | Course ID (must match topic) |
 | title    | Text | No  | Video title (defaults to filename) |
@@ -340,9 +352,9 @@ The backend stores the file in Supabase Storage and creates a DB record in `vide
 ## Example (curl)
 
 ```bash
-curl -X POST http://localhost:4000/api/video/upload \
+curl -X POST http://localhost:4000/api/video \
   -H "Authorization: Bearer <ADMIN_TOKEN>" \
-  -F "file=@intro.mp4" \
+  -F "video=@intro.mp4" \
   -F "topicId=442f03d6-f13c-4135-a5d3-b45adcf20ef2" \
   -F "courseId=38ca2086-c979-4f09-b9e0-c54922ac73fc" \
   -F "title=Intro Video"
@@ -350,57 +362,51 @@ curl -X POST http://localhost:4000/api/video/upload \
 
 ---
 
+## Response (201)
 
-### Create Video (Admin)
-POST /api/video
-
-Body:
+```json
 {
+  "id": "VIDEO_UUID",
   "title": "Intro Video",
-  "url": "https://<project>.supabase.co/storage/v1/object/public/videos/topic-videos/intro.mp4",
-  "courseId": "<course-uuid>",
-  "topicId": "<topic-uuid>"
+  "topic_id": "TOPIC_UUID",
+  "video_path": "topic-videos/<topicId>/<videoId>.mp4",
+  "created_at": "2026-02-18T16:40:00Z"
 }
-
-Stores:
-- video_path in videos table
-- linked via topic_id
+```
 
 ---
 
-### Stream Video (Public)
-GET /api/video?topicId=<topic-uuid>
+## Stream Video (User)
 
-Supports:
-- Range headers
-- Inline streaming (not download)
+Streams a video by **videoId**.  
+Supports HTTP Range requests for smooth playback.
 
 ---
 
-### Get Signed URL (Client)
-GET /api/video/signed-url?topicId=<topic-uuid>
+## Endpoint
 
-Headers:
-Authorization: Bearer <CLIENT_TOKEN>
-
-Response:
-{
-  "url": "<signed-url>",
-  "expiresIn": 3600
-}
+**GET** `/api/video/:videoId/stream`
 
 ---
 
-### Update Video (Admin)
-PUT /api/video/:topicId
+## Auth
 
-Body:
-{
-  "title": "Updated title",
-  "url": "new-video-url"
-}
+**Required**  
+`Authorization: Bearer <USER_TOKEN>`
 
 ---
+
+## Example
+
+```bash
+curl http://localhost:4000/api/video/VIDEO_UUID/stream \
+  -H "Authorization: Bearer <USER_TOKEN>" \
+  --output video.mp4
+```
+
+---
+
+
 
 ## Labs
 
@@ -550,7 +556,7 @@ Response 201:
 
 ## Get Assignment by Course (User)
 
-GET /api/assignments/course/:courseId  
+GET /api/assignments/topic/:topicId  
 Authorization: Bearer <USER_TOKEN>
 
 Response:

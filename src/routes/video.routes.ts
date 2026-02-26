@@ -1,6 +1,5 @@
 import { Router } from 'express'
 import {
-  createVideo,
   streamVideo,
   updateVideo,uploadVideo
 } from '../controllers/video.controller'
@@ -11,7 +10,13 @@ import { upload } from '../middlewares/upload.middleware'
 const router = Router()
 
 router.get('/', streamVideo)
-router.post('/', requireAuth, requireAdmin, createVideo)
+router.post(
+  '/',
+  upload.single('video'),   // FIRST
+  requireAuth,
+  requireAdmin,
+  uploadVideo
+)
 router.put('/:id', requireAuth, requireAdmin, updateVideo)
 router.post(
   '/upload',
