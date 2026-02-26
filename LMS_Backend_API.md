@@ -550,14 +550,16 @@ This document describes **only the Assignment-related APIs** in the LMS backend.
 
 ## Create Assignment (Admin)
 
+Creates **one assignment per course**.
+
 POST /api/admin/assignments  
 Authorization: Bearer <ADMIN_TOKEN>
 
 Request:
 ```json
 {
-  "topic_id": "TOPIC_ID",
-  "title": "Final Practical Assignment",
+  "course_id": "COURSE_UUID",
+  "title": "Final Course Assignment",
   "description": "Upload your final project PDF",
   "max_marks": 100,
   "passing_marks": 40
@@ -568,12 +570,12 @@ Response 201:
 ```json
 {
   "id": "ASSIGNMENT_UUID",
-  "topic_id": "TOPIC_ID",
-  "title": "Final Practical Assignment",
+  "course_id": "COURSE_UUID",
+  "title": "Final Course Assignment",
   "description": "Upload your final project PDF",
   "max_marks": 100,
   "passing_marks": 40,
-  "created_at": "2026-02-18T10:00:00Z"
+  "created_at": "2026-02-26T18:55:32Z"
 }
 ```
 
@@ -581,24 +583,33 @@ Response 201:
 
 ## Get Assignment by Course (User)
 
-GET /api/assignments/topic/:topicId  
+Fetches the assignment linked to a course.
+
+GET /api/assignments/course/:courseId  
 Authorization: Bearer <USER_TOKEN>
 
 Response:
 ```json
 {
   "id": "ASSIGNMENT_UUID",
-  "topic_id": "TOPIC_ID",
-  "title": "Final Practical Assignment",
+  "course_id": "COURSE_UUID",
+  "title": "Final Course Assignment",
   "description": "Upload your final project PDF",
   "max_marks": 100,
   "passing_marks": 40
 }
 ```
 
+If no assignment exists:
+```json
+null
+```
+
 ---
 
 ## Submit Assignment (User)
+
+Allows a user to submit **one file only** for the assignment.
 
 POST /api/assignments/:assignmentId/submit  
 Authorization: Bearer <USER_TOKEN>  
@@ -616,9 +627,15 @@ Response 201:
 }
 ```
 
+Errors:
+- Duplicate submission → `Assignment already submitted`
+- Missing file → `Assignment file is required`
+
 ---
 
 ## View Assignment Submissions (Admin)
+
+View all submissions for an assignment.
 
 GET /api/admin/assignments/:assignmentId/submissions  
 Authorization: Bearer <ADMIN_TOKEN>
@@ -630,7 +647,7 @@ Response:
     "id": "SUBMISSION_UUID",
     "user_id": "USER_UUID",
     "file_url": "https://storage.example.com/assignment.pdf",
-    "submitted_at": "2026-02-18T10:30:00Z",
+    "submitted_at": "2026-02-27T00:10:00Z",
     "marks_awarded": null,
     "status": "submitted"
   }
@@ -641,13 +658,15 @@ Response:
 
 ## Evaluate Assignment Submission (Admin)
 
+Grades a user submission and determines pass/fail.
+
 POST /api/admin/assignments/submissions/:submissionId/evaluate  
 Authorization: Bearer <ADMIN_TOKEN>
 
 Request:
 ```json
 {
-  "marks_awarded": 75
+  "marks_awarded": 65
 }
 ```
 
@@ -659,9 +678,18 @@ Response:
 }
 ```
 
+If failed:
+```json
+{
+  "status": "rejected"
+}
+```
+
 ---
 
 ## Delete Assignment (Admin)
+
+Deletes an assignment and all related submissions.
 
 DELETE /api/admin/assignments/:assignmentId  
 Authorization: Bearer <ADMIN_TOKEN>
@@ -677,9 +705,10 @@ Response:
 
 ## Notes
 
-- Assignments are **course-level**, not topic-level.
-- Users can submit **only once** per assignment.
-- Files are uploaded to Supabase Storage (`assignments` bucket).
+- Assignments are **course-level only**.
+- Only **one assignment per course**.
+- Users can submit **only once per assignment**.
+- Files are stored in Supabase Storage (`assignments` bucket).
 - Assignment is considered **passed** if:
   ```
   marks_awarded >= passing_marks
