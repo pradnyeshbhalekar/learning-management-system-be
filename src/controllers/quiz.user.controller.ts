@@ -44,20 +44,34 @@ export async function getQuizByCourse(req: Request, res: Response) {
   })
 }
 
+
+
+
 /* =========================
-   SUBMIT QUIZ (MULTI-ATTEMPT)
+   TYPES
+========================= */
+type QuizAnswerInput = {
+  question_id: string
+  option_id: string
+}
+
+/* =========================
+   SUBMIT QUIZ (COURSE-LEVEL)
 ========================= */
 export async function submitQuiz(req: Request, res: Response) {
   try {
     const userId = req.user!.userId
-    const { answers, timeTaken } = req.body
     const { courseId } = req.params
-
-    if (!answers?.length) {
-      return res.status(400).json({ error: 'Answers required' })
+    const { answers, timeTaken } = req.body as {
+      answers: QuizAnswerInput[]
+      timeTaken?: number
     }
 
-    // 1️⃣ Fetch quiz for course
+    if (!answers || answers.length === 0) {
+      return res.status(400).json({ error: 'Answers are required' })
+    }
+
+    /* 1️⃣ Get quiz for course */
     const { data: quiz, error: quizError } = await supabase
       .from('quizzes')
       .select('id, passing_marks')
@@ -68,7 +82,7 @@ export async function submitQuiz(req: Request, res: Response) {
       return res.status(404).json({ error: 'Quiz not found for course' })
     }
 
-    // 2️⃣ Check if already passed
+    /* 2️⃣ Prevent re-attempt if already passed */
     const { data: passedAttempt } = await supabase
       .from('quiz_attempts')
       .select('id')
@@ -81,21 +95,26 @@ export async function submitQuiz(req: Request, res: Response) {
       return res.status(400).json({ error: 'Quiz already passed' })
     }
 
-    // 3️⃣ Fetch correct options
-    const questionIds = answers.map((a: any) => a.question_id)
+    /* 3️⃣ Fetch correct options */
+    const questionIds = answers.map((a) => a.question_id)
 
-    const { data: correctOptions } = await supabase
+    const { data: correctOptions, error: optionsError } = await supabase
       .from('quiz_options')
-      .select('id, question_id')
+      .select('id')
       .eq('is_correct', true)
       .in('question_id', questionIds)
 
+    if (optionsError) {
+      return res.status(500).json({ error: optionsError.message })
+    }
+
+    /* 4️⃣ Evaluate answers */
     let correctCount = 0
 
-    const answerRows = answers.map((a: any) => {
-      const isCorrect = correctOptions?.some(
-        o => o.id === a.option_id
-      )
+    const answerRows = answers.map((a) => {
+      const isCorrect =
+        correctOptions?.some((o) => o.id === a.option_id) ?? false
+
       if (isCorrect) correctCount++
 
       return {
@@ -108,7 +127,7 @@ export async function submitQuiz(req: Request, res: Response) {
     const score = Math.round((correctCount / answers.length) * 100)
     const passed = score >= quiz.passing_marks
 
-    // 4️⃣ Create attempt (THIS WAS FAILING)
+    /* 5️⃣ Create quiz attempt */
     const { data: attempt, error: attemptError } = await supabase
       .from('quiz_attempts')
       .insert({
@@ -116,7 +135,7 @@ export async function submitQuiz(req: Request, res: Response) {
         user_id: userId,
         score,
         passed,
-        time_taken_seconds: timeTaken,
+        time_taken_seconds: timeTaken ?? null,
       })
       .select()
       .single()
@@ -126,14 +145,22 @@ export async function submitQuiz(req: Request, res: Response) {
       return res.status(500).json({ error: 'Failed to create attempt' })
     }
 
-    // 5️⃣ Insert answers
-    await supabase.from('quiz_answers').insert(
-      answerRows.map(a => ({
-        ...a,
-        attempt_id: attempt.id,
-      }))
-    )
+    /* 6️⃣ Store answers */
+    const { error: answersError } = await supabase
+      .from('quiz_answers')
+      .insert(
+        answerRows.map((a) => ({
+          ...a,
+          attempt_id: attempt.id,
+        }))
+      )
 
+    if (answersError) {
+      console.error(answersError)
+      return res.status(500).json({ error: 'Failed to save answers' })
+    }
+
+    /* 7️⃣ Response */
     res.json({
       score,
       passed,
